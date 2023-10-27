@@ -19,13 +19,15 @@ MODEL_PARSER = LLM | StrOutputParser()
 
 
 _name_extractor_prompt = PromptTemplate.from_template(
-    """You will be given the title and description of a company website.
+    """You will be given the title, description, and URL of a company website.
     
     Here is the website title: {title}
     Here is the website description: {description}
+    Here is the website URL: {url}
     
     
-    Extract and return only name of the company.
+    
+    Infer and extract the name of the company. Only return the name of the company.
     """
 )
 
@@ -49,7 +51,7 @@ _is_contractor_prompt = PromptTemplate.from_template(
     """Given an explanation of a search result,
     determine if it directly represents a webpage for a construction contractor company website.
     Return 'contractor' if it is,
-    and 'not contractor' if it's a different type of page that mentions 'contractor' but is not a contractor company website.
+    and 'not contractor' if it does not directly represent a contractor company website.
     
     {explanation}
     """
@@ -89,7 +91,7 @@ class ContractorFinder:
     @classmethod
     async def _extract_contractor(cls, result: SearchResult) -> Contractor:
         """ Extract company data from search result using LLM """
-        name = cls._name_extract_chain.ainvoke({'title': result.title, 'description': result.description})
+        name = cls._name_extract_chain.ainvoke({'title': result.title, 'description': result.description, 'url': result.url})
         desc = result.description
         url = result.url
 
