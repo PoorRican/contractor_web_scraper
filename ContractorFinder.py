@@ -4,17 +4,12 @@ from typing import ClassVar, Generator, Any, NoReturn, Callable
 from googlesearch import search, SearchResult
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
-from langchain.chat_models import ChatOpenAI
-from langchain.schema.output_parser import StrOutputParser
 
 from models import Contractor
+from llm import LLM, MODEL_PARSER
 
 
 NUM_RESULTS: int = 100
-
-
-LLM = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo')
-MODEL_PARSER = LLM | StrOutputParser()
 
 
 _name_extractor_prompt = PromptTemplate.from_template(
