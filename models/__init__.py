@@ -1,1 +1,1 @@
-from Contractor import Contractor
+from .Contractor import Contractor

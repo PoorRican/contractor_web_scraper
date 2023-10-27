@@ -17,3 +17,6 @@ class Contractor(object):
         """ Add service to local list """
         if service not in self.services:
             self.services.append(service)
+
+    def __repr__(self) -> str:
+        return f"<Contractor: {self.title}; description: {self.description}>"
