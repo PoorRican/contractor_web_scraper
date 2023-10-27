@@ -2,15 +2,15 @@
 import asyncio
 
 from ContractorFinder import ContractorFinder
+from ContractorHandler import ContractorHandler
 
 # TODO: move this to an .env file
 TERMS: list[str] = ["Pennsylvania residential contractor"]
 
 if __name__ == '__main__':
-    finder = ContractorFinder()
+    handler = ContractorHandler()
+    finder = ContractorFinder(handler.handle_contractors)
 
     asyncio.run(finder(TERMS))
 
-    print(f"Found {len(finder.contractors)} contractors")
-    for i in finder.contractors:
-        print(i)
+    print(f"Found {len(handler.contractors)} contractors")

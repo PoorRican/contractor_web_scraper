@@ -1,12 +1,11 @@
 import asyncio
-from typing import ClassVar, Generator, Any, NoReturn, Coroutine
+from typing import ClassVar, Generator, Any, NoReturn, Callable
 
 from googlesearch import search, SearchResult
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
 from langchain.chat_models import ChatOpenAI
 from langchain.schema.output_parser import StrOutputParser
-from langchain.callbacks import StdOutCallbackHandler
 
 from models import Contractor
 
@@ -14,7 +13,7 @@ from models import Contractor
 NUM_RESULTS: int = 100
 
 
-LLM = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo', callbacks=[StdOutCallbackHandler()])
+LLM = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo')
 MODEL_PARSER = LLM | StrOutputParser()
 
 
@@ -61,10 +60,13 @@ _is_contractor_prompt = PromptTemplate.from_template(
 class ContractorFinder:
     """ Find contractor websites via LLM """
 
-    contractors: list[Contractor] = []
     _name_extract_chain: ClassVar[Runnable] = _name_extractor_prompt | MODEL_PARSER
     _expand_chain: ClassVar[Runnable] = _description_expand_prompt | LLM
     _is_contractor_chain: ClassVar[Runnable] = {'explanation': _expand_chain} | _is_contractor_prompt | MODEL_PARSER
+    _on_parse: Callable[[[Contractor]], None]
+
+    def __init__(self, on_parse: Callable[[[Contractor]], None]):
+        self._on_parse = on_parse
 
     @classmethod
     async def _is_contractor_site(cls, result: SearchResult) -> bool:
@@ -91,7 +93,11 @@ class ContractorFinder:
     @classmethod
     async def _extract_contractor(cls, result: SearchResult) -> Contractor:
         """ Extract company data from search result using LLM """
-        name = cls._name_extract_chain.ainvoke({'title': result.title, 'description': result.description, 'url': result.url})
+        name = cls._name_extract_chain.ainvoke({
+            'title': result.title,
+            'description': result.description,
+            'url': result.url
+        })
         desc = result.description
         url = result.url
 
@@ -126,4 +132,4 @@ class ContractorFinder:
                 routines.append(self._extract_contractor(result))
         contractors = await asyncio.gather(*routines)
 
-        self.contractors.extend(contractors)
+        self._on_parse(contractors)
