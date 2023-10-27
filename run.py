@@ -10,4 +10,7 @@ if __name__ == '__main__':
     finder = ContractorFinder()
 
     asyncio.run(finder(TERMS))
-    print(finder.contractors)
+
+    print(f"Found {len(finder.contractors)} contractors")
+    for i in finder.contractors:
+        print(i)

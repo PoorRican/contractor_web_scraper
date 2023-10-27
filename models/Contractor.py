@@ -19,4 +19,4 @@ class Contractor(object):
             self.services.append(service)
 
     def __repr__(self) -> str:
-        return f"<Contractor: {self.title}; description: {self.description}>"
+        return f"<Contractor: {self.title}; url: {self.url}; description: {self.description}>"

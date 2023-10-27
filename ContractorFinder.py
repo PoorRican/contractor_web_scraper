@@ -73,18 +73,18 @@ class ContractorFinder:
         title = result.title
         url = result.url
         description = result.description
-        print(f"Processing {result}")
         response = await cls._is_contractor_chain.ainvoke({
             'title': title,
             'url': url,
             'description': description
         })
+        response = response.strip()
         if response == 'contractor':
             return True
         elif response == 'not contractor':
             return False
         else:
-            raise ValueError("`_is_contractor_chain` returned ambiguous output")
+            raise ValueError(f"`_is_contractor_chain` returned ambiguous output: '{response}'")
 
     @classmethod
     async def _extract_contractor(cls, result: SearchResult) -> Contractor:
