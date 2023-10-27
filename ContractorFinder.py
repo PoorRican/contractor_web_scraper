@@ -19,10 +19,10 @@ MODEL_PARSER = LLM | StrOutputParser()
 
 
 _name_extractor_prompt = PromptTemplate.from_template(
-    """You will be given the title of a company webpage.
+    """You will be given the title and description of a company website.
     
-    Here is the webpage title: 
-    {title}
+    Here is the website title: {title}
+    Here is the website description: {description}
     
     
     Extract and return only name of the company.
@@ -89,7 +89,7 @@ class ContractorFinder:
     @classmethod
     async def _extract_contractor(cls, result: SearchResult) -> Contractor:
         """ Extract company data from search result using LLM """
-        name = cls._name_extract_chain.ainvoke({'title': result.title})
+        name = cls._name_extract_chain.ainvoke({'title': result.title, 'description': result.description})
         desc = result.description
         url = result.url
 
