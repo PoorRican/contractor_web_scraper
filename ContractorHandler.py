@@ -1,7 +1,8 @@
 import asyncio
 from typing import NoReturn, ClassVar
+import warnings
 
-from requests import get, Session
+from requests import Session, ConnectTimeout
 from requests.adapters import HTTPAdapter, Retry
 from bs4 import BeautifulSoup, Tag
 
@@ -66,7 +67,11 @@ class ContractorHandler:
         This will fetch the contractor site, then scrape the address from the site.
         """
         print(f"Processing contractor: {contractor}")
-        content = await self._fetch_site(contractor.url)
+        try:
+            content = await self._fetch_site(contractor.url)
+        except ConnectTimeout:
+            warnings.warn(f"Timed out while fetching site: {contractor.url}")
+            return
 
         # TODO: all scraping should be awaited by gathering a list of coroutines
         address = await self._address_scraper(content)
