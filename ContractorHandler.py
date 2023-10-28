@@ -74,7 +74,7 @@ class ContractorHandler:
             return
 
         # TODO: all scraping should be awaited by gathering a list of coroutines
-        address = await self._address_scraper(content)
+        address = await self._address_scraper(content, contractor)
         print(f"Found address: {address}")
         # contractor.address = address
 

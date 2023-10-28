@@ -1,4 +1,5 @@
 import re
+import warnings
 from copy import copy
 from typing import ClassVar, Union
 
@@ -8,13 +9,15 @@ from langchain.schema.runnable import Runnable
 from openai import InvalidRequestError
 
 from llm import LONG_MODEL_PARSER
+from models import Contractor
 
 _address_scaper_prompt = PromptTemplate.from_template(
     """You will be given the HTML content of a construction company website.
     
-    Here is the content: {content}
+    Here is the content: ```{content}```
     
     What is the mailing address of the company? Return only the address and nothing else.
+    If there are two addresses, return the first one, but nothing else.
     If there is no mailing address within the content, return 'no address' and nothing else.
     """
 )
@@ -28,6 +31,13 @@ class AddressScraper:
         pattern = r'([A-Za-z0-9])\n'
         stripped = re.sub(pattern, r'\1, ', address)
         return stripped.replace(',\n', ', ').replace('.\n', ', ')
+
+    @staticmethod
+    def _strip_extra_data(content: Tag) -> Tag:
+        for tag in content.find_all(True):
+            # Remove all HTML attributes from the tag
+            tag.attrs = {}
+        return content
 
     async def _process(self, content: Union[Tag, PageElement]) -> Union[str, None]:
         """ Attempt to extract address from HTML content
@@ -48,7 +58,7 @@ class AddressScraper:
             # TODO: break down content into smaller pieces
         return None
 
-    async def __call__(self, content: Tag) -> str:
+    async def __call__(self, content: Tag, contractor: Contractor) -> str:
         """ Scrape address from HTML content """
 
         # attempt to find address in footer or header
@@ -68,3 +78,5 @@ class AddressScraper:
             address = await self._process(section)
             if address is not None:
                 return address
+
+        warnings.warn(f"Could not find address on site: {contractor.url}")
