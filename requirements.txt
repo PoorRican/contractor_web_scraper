@@ -1,4 +1,6 @@
 googlesearch-python
-bs4
+bs4~=0.0.1
 langchain==0.0.324
 openai==0.28.1
+beautifulsoup4~=4.12.2
+requests~=2.31.0
