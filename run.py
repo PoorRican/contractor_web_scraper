@@ -1,7 +1,7 @@
-""" Run `ContractorFinder` with `TERMS` """
+""" Run `SearchParser` with `TERMS` """
 import asyncio
 
-from ContractorFinder import ContractorFinder
+from parsers import SearchParser
 from ContractorHandler import ContractorHandler
 
 # TODO: move this to an .env file
@@ -9,7 +9,7 @@ TERMS: list[str] = ["Pennsylvania residential contractor"]
 
 if __name__ == '__main__':
     handler = ContractorHandler()
-    finder = ContractorFinder(handler.handle_contractors)
+    finder = SearchParser(handler.handle_contractors)
 
     asyncio.run(finder(TERMS))
 

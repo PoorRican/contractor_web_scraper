@@ -12,7 +12,7 @@ class ContractorHandler:
     contractors: dict[str, Contractor] = dict()
 
     def handle_contractors(self, contractors: [Contractor]) -> NoReturn:
-        """ Handle contractors that are found by `ContractorFinder`. """
+        """ Handle contractors that are found by `SearchParser`. """
         for contractor in contractors:
             print(f"Handling contractor: {contractor}")
             if contractor.title not in self.contractors.keys():

@@ -52,22 +52,43 @@ _is_contractor_prompt = PromptTemplate.from_template(
 )
 
 
-class ContractorFinder:
-    """ Find contractor websites via LLM """
+class SearchParser:
+    """ Perform search and filter contractor websites via LLM.
+
+    This is a functor which accepts a list of search terms, then parses each search result. A `Contractor` object is
+    created for each search result that is determined to be a contractor website. For each `Contract` object, the
+    `ContractorHandler` is notified by passing a list of `Contractor` objects to the `on_parse` callback.
+    """
 
     _name_extract_chain: ClassVar[Runnable] = _name_extractor_prompt | MODEL_PARSER
+    """ Chain to extract company name from search result.
+     
+    This is used by `_extract_contractor()` to extract the company name from a search result.
+    """
     _expand_chain: ClassVar[Runnable] = _description_expand_prompt | LLM
     _is_contractor_chain: ClassVar[Runnable] = {'explanation': _expand_chain} | _is_contractor_prompt | MODEL_PARSER
+    """ Chain to determine if a search result is a contractor site.
+    
+    This is used by `_is_contractor_site()` to determine if a search result is a contractor site.
+    """
+
     _on_parse: Callable[[[Contractor]], None]
+    """ Callback to be called when a search term is parsed. """
 
     def __init__(self, on_parse: Callable[[[Contractor]], None]):
         self._on_parse = on_parse
 
     @classmethod
     async def _is_contractor_site(cls, result: SearchResult) -> bool:
-        """ Detect if site is a company site based on search result description.
+        """ Detect if site is a company site based on search result.
 
-        Pass description to LangChain prompt.
+        This uses the `_is_contractor_chain` to determine if the search result is a contractor site.
+
+        Parameters:
+            result: `SearchResult` object to check
+
+        Returns:
+            True if site is a contractor site, False otherwise
         """
         title = result.title
         url = result.url
@@ -87,7 +108,16 @@ class ContractorFinder:
 
     @classmethod
     async def _extract_contractor(cls, result: SearchResult) -> Contractor:
-        """ Extract company data from search result using LLM """
+        """ Extract company data from search result using LLM.
+
+        This uses the `_name_extract_chain` to extract the company name from the search result.
+
+        Parameters:
+            result: `SearchResult` object to extract data from
+
+        Returns:
+            `Contractor` object containing extracted data
+        """
         name = cls._name_extract_chain.ainvoke({
             'title': result.title,
             'description': result.description,
@@ -100,11 +130,20 @@ class ContractorFinder:
 
     @staticmethod
     def _perform_search(term: str) -> Generator[SearchResult, Any, None]:
-        """ Wrapper for `googlesearch.search` """
+        """ Wrapper for `googlesearch.search`
+
+        This uses `NUM_RESULTS` as the number of results to fetch.
+
+        Parameters:
+            term: search term to use
+
+        Returns:
+            Generator of `SearchResult` objects
+        """
         return search(term, advanced=True, num_results=NUM_RESULTS, sleep_interval=1)
 
     async def __call__(self, terms: list[str]) -> NoReturn:
-        """ Perform searches for all terms then parse and save results """
+        """ Handles searches for each term in `terms` """
         # TODO: this could be parallelized
         for term in terms:
             results = self._perform_search(term)
@@ -112,7 +151,11 @@ class ContractorFinder:
             await self._parse_results(results)
 
     async def _parse_results(self, results: Generator[SearchResult, Any, None]) -> NoReturn:
-        """ Parse unfiltered results into `Contractor` objects """
+        """ Parse unfiltered results into `Contractor` objects
+
+        This will filter out any search results that are not contractor sites. Then for each contractor site, the
+        `_on_parse` callback is called with a list of `Contractor` objects.
+        """
         results = [result for result in results]
 
         # parse all results into an array of booleans
