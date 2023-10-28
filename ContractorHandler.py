@@ -48,8 +48,10 @@ class ContractorHandler:
         soup = BeautifulSoup(content, 'html.parser')
         body = soup.find('body')
 
-        # kill all script and media elements
-        tags = ('script', 'img')
+        # kill all unnecessary tags
+        tags = ('script', 'img', 'style', 'svg', 'video', 'audio', 'picture', 'iframe', 'i', 'source', 'noscript',
+                'link', 'meta', 'head', 'canvas', 'button', 'form', 'input', 'textarea', 'select', 'option',
+                'label', 'fieldset', 'legend', 'datalist', 'optgroup', 'keygen', 'output', 'progress', 'meter',)
         for tag in tags:
             for node in body.find_all(tag):
                 node.decompose()
