@@ -1,5 +1,6 @@
 import asyncio
-from typing import ClassVar, Generator, Any, NoReturn, Callable
+from typing import ClassVar, Generator, Any, NoReturn, Callable, Coroutine
+from urllib.parse import urlparse
 
 from googlesearch import search, SearchResult
 from langchain.prompts import PromptTemplate
@@ -72,10 +73,10 @@ class SearchParser:
     This is used by `_is_contractor_site()` to determine if a search result is a contractor site.
     """
 
-    _on_parse: Callable[[[Contractor]], None]
-    """ Callback to be called when a search term is parsed. """
+    _on_parse: Callable[[[Contractor]], Coroutine[Any, Any, None]]
+    """ Asynchronous callback for handling batches of `Contractor` objects. """
 
-    def __init__(self, on_parse: Callable[[[Contractor]], None]):
+    def __init__(self, on_parse: Callable[[[Contractor]], Coroutine[Any, Any, None]]):
         self._on_parse = on_parse
 
     @classmethod
@@ -124,7 +125,8 @@ class SearchParser:
             'url': result.url
         })
         desc = result.description
-        url = result.url
+        # remove path and params from URL
+        url = urlparse(result.url)._replace(path='')._replace(params='').geturl()
 
         return Contractor(await name, desc, url)
 
@@ -143,7 +145,13 @@ class SearchParser:
         return search(term, advanced=True, num_results=NUM_RESULTS, sleep_interval=1)
 
     async def __call__(self, terms: list[str]) -> NoReturn:
-        """ Handles searches for each term in `terms` """
+        """ Handles searches for each term in `terms`.
+
+        Each batch of `Contractor` objects are handled individually by the `_on_parse()` callback.
+
+        Parameters:
+            terms: list of search terms
+        """
         # TODO: this could be parallelized
         for term in terms:
             results = self._perform_search(term)
@@ -155,6 +163,11 @@ class SearchParser:
 
         This will filter out any search results that are not contractor sites. Then for each contractor site, the
         `_on_parse` callback is called with a list of `Contractor` objects.
+
+        For each batch of `Contractor` objects that are parsed, the `_on_parse` callback is called.
+
+        Parameters:
+            results: generator of `SearchResult` objects to parse. This should be the output of `googlesearch.search()`.
         """
         results = [result for result in results]
 
@@ -170,4 +183,4 @@ class SearchParser:
                 routines.append(self._extract_contractor(result))
         contractors = await asyncio.gather(*routines)
 
-        self._on_parse(contractors)
+        await self._on_parse(contractors)
