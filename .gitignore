@@ -1,2 +1,8 @@
 .venv
 .idea/
+
+# notebook files
+notebooks/
+
+# local LLM cache
+.langchain.db
