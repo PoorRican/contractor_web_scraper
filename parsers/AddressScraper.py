@@ -27,7 +27,7 @@ class AddressScraper:
     def _format_address(address: str) -> str:
         pattern = r'([A-Za-z0-9])\n'
         stripped = re.sub(pattern, r'\1, ', address)
-        return stripped.replace(',\n', ', ')
+        return stripped.replace(',\n', ', ').replace('.\n', ', ')
 
     async def _process(self, content: Union[Tag, PageElement]) -> Union[str, None]:
         """ Attempt to extract address from HTML content
@@ -40,7 +40,7 @@ class AddressScraper:
         """
         try:
             result: str = await self._chain.ainvoke({'content': str(content)})
-            if result != 'no address':
+            if result.lower() != 'no address':
                 return self._format_address(result)
                 # replace newlines with commas using regex
         except InvalidRequestError:
