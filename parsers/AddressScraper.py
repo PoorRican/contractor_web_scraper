@@ -22,9 +22,20 @@ _address_scaper_prompt = PromptTemplate.from_template(
     """
 )
 
+_formatter_prompt = PromptTemplate.from_template(
+    """You will be given text that should directly represent a mailing address.
+    
+    Here is the address: {address}
+    
+    Is this a specific mailing address? If not, return 'no address' and nothing else.
+    Format the mailing address so that it is on one line, with commas separating each part of the address.
+    """
+)
+
 
 class AddressScraper:
-    _chain: ClassVar[Runnable] = _address_scaper_prompt | LONG_MODEL_PARSER
+    _extract_chain: ClassVar[Runnable] = _address_scaper_prompt | LONG_MODEL_PARSER
+    _chain: ClassVar[Runnable] = {'address': _extract_chain} | _formatter_prompt | LONG_MODEL_PARSER
 
     @staticmethod
     def _format_address(address: str) -> str:
@@ -60,22 +71,29 @@ class AddressScraper:
 
     async def __call__(self, content: Tag, contractor: Contractor) -> str:
         """ Scrape address from HTML content """
+        _content = self._strip_extra_data(copy(content))
 
         # attempt to find address in footer or header
         for i in ('footer', 'header'):
-            section = content.find(i)
+            section = _content.find(i)
             if section is not None:
                 address = await self._process(section)
                 if address is not None:
                     return address
 
-        # begin to chunk the rest of the content into smaller pieces
-        _content: Tag = copy(content)
-        for i in ('footer', 'header'):
-            for tag in _content.find_all(i):
-                tag.decompose()
-        for section in _content.children:
-            address = await self._process(section)
+        # begin to look at all small text snippets
+        for i in ('p', 'span', 'a'):
+            sections = _content.find_all(i)
+            for section in sections:
+                address = await self._process(section)
+                if address is not None:
+                    return address
+
+        # as a last resort, look at first and last chunks
+        chunk_size = 5000
+        first, last = str(_content)[:chunk_size], str(_content)[-chunk_size:]
+        for i in (first, last):
+            address = await self._process(i)
             if address is not None:
                 return address
 
