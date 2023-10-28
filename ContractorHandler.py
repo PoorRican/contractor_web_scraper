@@ -4,6 +4,7 @@ import warnings
 
 from requests import Session, ConnectTimeout
 from requests.adapters import HTTPAdapter, Retry
+from requests.utils import default_headers
 from bs4 import BeautifulSoup, Tag
 
 from models import Contractor
@@ -42,9 +43,20 @@ class ContractorHandler:
         print(f"Fetching site: {url}")
 
         s = Session()
+
+        # setup retry mechanism
         retries = Retry(total=5, backoff_factor=1, status_forcelist=[502, 503, 504])
         s.mount('https://', HTTPAdapter(max_retries=retries))
-        content = s.get(url).text
+
+        # spoof user agent
+        headers = default_headers()
+        headers.update({'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, '
+                                      'like Gecko) Chrome/118.0.0.0 Safari/537.36',
+                        'Dnt': '1',
+                        'Sec-Ch-Ua': '"Not=A?Brand";v = "99", "Chromium";v = "118"'
+                        })
+
+        content = s.get(url, headers=headers).text
 
         soup = BeautifulSoup(content, 'html.parser')
         body = soup.find('body')
@@ -75,7 +87,7 @@ class ContractorHandler:
 
         # TODO: all scraping should be awaited by gathering a list of coroutines
         address = await self._address_scraper(content, contractor)
-        print(f"Found address: {address}")
+        print(f"Found address: {contractor.title}: {address}")
         # contractor.address = address
 
     async def handle_contractors(self, contractors: [Contractor]) -> NoReturn:
