@@ -72,7 +72,7 @@ class TextSnippetScraper(ABC):
         """
         try:
             result: str = await self._chain.ainvoke({'content': str(content)})
-            if result.lower() != self._failure_text:
+            if self._failure_text not in result.lower():
                 return result
         except InvalidRequestError:
             print(f"InvalidRequestError while scraping {self._search_type}. String might be too many tokens...")
