@@ -8,7 +8,7 @@ from langchain.schema.runnable import Runnable
 
 from models import Contractor
 from llm import LLM, MODEL_PARSER
-
+from typedefs import SearchResults
 
 NUM_RESULTS: int = 100
 
@@ -131,7 +131,7 @@ class SearchParser:
         return Contractor(await name, desc, url)
 
     @staticmethod
-    def _perform_search(term: str) -> Generator[SearchResult, Any, None]:
+    def _perform_search(term: str) -> SearchResults:
         """ Wrapper for `googlesearch.search`
 
         This uses `NUM_RESULTS` as the number of results to fetch.
@@ -158,7 +158,7 @@ class SearchParser:
             print("Fetched search...processing results")
             await self._parse_results(results)
 
-    async def _parse_results(self, results: Generator[SearchResult, Any, None]) -> NoReturn:
+    async def _parse_results(self, results: SearchResults) -> NoReturn:
         """ Parse unfiltered results into `Contractor` objects
 
         This will filter out any search results that are not contractor sites. Then for each contractor site, the

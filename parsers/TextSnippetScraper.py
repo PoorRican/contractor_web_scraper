@@ -1,12 +1,13 @@
 import warnings
 from abc import abstractmethod, ABC
 from copy import copy
-from typing import Union, Callable, NoReturn
+from typing import Union, NoReturn
 
-from bs4 import Tag, PageElement
+from bs4 import Tag
 from langchain.schema.runnable import Runnable
 from openai import InvalidRequestError
 
+from typedefs import LLMInput, ContractorCallback
 from utils import strip_html_attrs
 
 
@@ -53,7 +54,7 @@ class TextSnippetScraper(ABC):
         """
         raise NotImplementedError
 
-    async def _process(self, content: Union[Tag, PageElement]) -> Union[str, None]:
+    async def _process(self, content: LLMInput) -> Union[str, None]:
         """ Attempt to extract the text snippet from HTML content using `self._chain`.
 
         Parameters:
@@ -71,7 +72,7 @@ class TextSnippetScraper(ABC):
             # TODO: break down content into smaller pieces
         return None
 
-    async def __call__(self, content: Tag, url: str, callback: Callable[[str], None]) -> NoReturn:
+    async def __call__(self, content: Tag, url: str, callback: ContractorCallback) -> NoReturn:
         """ Scrape snippet from HTML content """
         _content = strip_html_attrs(copy(content))
 
