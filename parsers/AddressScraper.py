@@ -1,7 +1,7 @@
 import re
 import warnings
 from copy import copy
-from typing import ClassVar, Union
+from typing import ClassVar, Union, Callable, NoReturn
 
 from bs4 import Tag, PageElement
 from langchain.prompts import PromptTemplate
@@ -69,7 +69,7 @@ class AddressScraper:
             # TODO: break down content into smaller pieces
         return None
 
-    async def __call__(self, content: Tag, contractor: Contractor) -> str:
+    async def __call__(self, content: Tag, url: str, callback: Callable[[str], None]) -> NoReturn:
         """ Scrape address from HTML content """
         _content = self._strip_extra_data(copy(content))
 
@@ -79,7 +79,7 @@ class AddressScraper:
             if section is not None:
                 address = await self._process(section)
                 if address is not None:
-                    return address
+                    return callback(address)
 
         # begin to look at all small text snippets
         for i in ('p', 'span', 'a'):
@@ -87,7 +87,7 @@ class AddressScraper:
             for section in sections:
                 address = await self._process(section)
                 if address is not None:
-                    return address
+                    return callback(address)
 
         # as a last resort, look at first and last chunks
         chunk_size = 5000
@@ -95,6 +95,7 @@ class AddressScraper:
         for i in (first, last):
             address = await self._process(i)
             if address is not None:
-                return address
+                return callback(address)
 
-        warnings.warn(f"Could not find address on site: {contractor.url}")
+        warnings.warn(f"Could not find address on site: {url}")
+        return

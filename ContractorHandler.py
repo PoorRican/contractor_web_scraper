@@ -39,9 +39,7 @@ class ContractorHandler:
         Returns:
             `bs4.Tag` object containing the cleaned HTML `body` content
         """
-
-        print(f"Fetching site: {url}")
-
+        # TODO: implement async requests
         s = Session()
 
         # setup retry mechanism
@@ -69,8 +67,6 @@ class ContractorHandler:
             for node in body.find_all(tag):
                 node.decompose()
 
-        print(f"Fetched site: {url}")
-
         return body
 
     async def _scrape(self, contractor: Contractor) -> NoReturn:
@@ -78,7 +74,6 @@ class ContractorHandler:
 
         This will fetch the contractor site, then scrape the address from the site.
         """
-        print(f"Processing contractor: {contractor}")
         try:
             content = await self._fetch_site(contractor.url)
         except ConnectTimeout:
@@ -86,9 +81,10 @@ class ContractorHandler:
             return
 
         # TODO: all scraping should be awaited by gathering a list of coroutines
-        address = await self._address_scraper(content, contractor)
-        print(f"Found address: {contractor.title}: {address}")
-        # contractor.address = address
+        await self._address_scraper(content, contractor.url, contractor.set_address)
+
+        if contractor.address is not None:
+            print(f"Found address: {contractor.title}: {contractor.address}")
 
     async def handle_contractors(self, contractors: [Contractor]) -> NoReturn:
         """ Handle contractors that are found by `SearchParser`.
