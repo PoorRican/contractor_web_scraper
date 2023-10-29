@@ -5,9 +5,7 @@ import warnings
 from aiohttp import ClientTimeout
 
 from models import Contractor
-from parsers.EmailScraper import EmailScraper
-from parsers.AddressScraper import AddressScraper
-from parsers.PhoneScraper import PhoneScraper
+from parsers import AddressScraper, EmailScraper, PhoneScraper
 from utils import fetch_site
 
 
