@@ -7,6 +7,8 @@ from bs4 import Tag, PageElement
 from langchain.schema.runnable import Runnable
 from openai import InvalidRequestError
 
+from utils import strip_html_attrs
+
 
 class TextSnippetScraper(ABC):
     """ A template functor class for scraping text snippets from HTML content.
@@ -51,16 +53,6 @@ class TextSnippetScraper(ABC):
         """
         raise NotImplementedError
 
-    @staticmethod
-    def _strip_extra_data(content: Tag) -> Tag:
-        """ Preprocess HTML content to remove all HTML attributes from tags.
-
-        This is used to remove all superfluous data and significantly reduce the number of tokens in the content.
-        """
-        for tag in content.find_all(True):
-            tag.attrs = {}
-        return content
-
     async def _process(self, content: Union[Tag, PageElement]) -> Union[str, None]:
         """ Attempt to extract the text snippet from HTML content using `self._chain`.
 
@@ -81,7 +73,7 @@ class TextSnippetScraper(ABC):
 
     async def __call__(self, content: Tag, url: str, callback: Callable[[str], None]) -> NoReturn:
         """ Scrape snippet from HTML content """
-        _content = self._strip_extra_data(copy(content))
+        _content = strip_html_attrs(copy(content))
 
         # attempt to find snippet in footer or header
         for i in ('footer', 'header'):

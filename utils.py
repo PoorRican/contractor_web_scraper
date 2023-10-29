@@ -41,3 +41,19 @@ async def fetch_site(url: str) -> Tag:
             node.decompose()
 
     return body
+
+
+def strip_html_attrs(content: Tag) -> Tag:
+    """ Preprocess HTML content by removing all HTML attributes from tags.
+
+    This is used to remove all superfluous data and significantly reduce the number of tokens in the content.
+
+    Parameters:
+        content: HTML content to preprocess
+
+    Returns:
+        `bs4.Tag` object containing the cleaned HTML content
+    """
+    for tag in content.find_all(True):
+        tag.attrs = {}
+    return content
