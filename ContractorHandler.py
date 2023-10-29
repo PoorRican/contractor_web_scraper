@@ -2,6 +2,8 @@ import asyncio
 from typing import NoReturn, ClassVar
 import warnings
 
+import aiohttp
+from aiohttp_retry import RetryClient
 from requests import Session, ConnectTimeout
 from requests.adapters import HTTPAdapter, Retry
 from requests.utils import default_headers
@@ -43,22 +45,16 @@ class ContractorHandler:
         Returns:
             `bs4.Tag` object containing the cleaned HTML `body` content
         """
-        # TODO: implement async requests
-        s = Session()
-
-        # setup retry mechanism
-        retries = Retry(total=5, backoff_factor=1, status_forcelist=[502, 503, 504])
-        s.mount('https://', HTTPAdapter(max_retries=retries))
-
-        # spoof user agent
-        headers = default_headers()
-        headers.update({'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, '
-                                      'like Gecko) Chrome/118.0.0.0 Safari/537.36',
-                        'Dnt': '1',
-                        'Sec-Ch-Ua': '"Not=A?Brand";v = "99", "Chromium";v = "118"'
-                        })
-
-        content = s.get(url, headers=headers).text
+        async with RetryClient() as client:
+            # spoof user agent
+            headers = default_headers()
+            headers.update({'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, '
+                                          'like Gecko) Chrome/118.0.0.0 Safari/537.36',
+                            'Dnt': '1',
+                            'Sec-Ch-Ua': '"Not=A?Brand";v = "99", "Chromium";v = "118"'
+                            })
+            async with client.get(url, headers=headers) as response:
+                content = await response.text()
 
         soup = BeautifulSoup(content, 'html.parser')
         body = soup.find('body')
