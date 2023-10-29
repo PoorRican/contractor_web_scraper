@@ -7,6 +7,27 @@ class Contractor(object):
     description: str
     url: str
     services: list[str] = []
+    """ A list of services that the contractor provides """
+    address: str = None
+    """ A string representing the physical address of the contractor.
+    
+    If multiple addresses are found, only the first one is used.
+    """
+    location: str = None
+    """ A string which represents what locations are served by the contractor """
+    projects: list[str] = []
+    """ A list of projects that the contractor has completed.
+    
+    Eventually, this should be a list of `Project` objects.
+    """
+    phone: str = None
+    """ A string representing the phone number of the contractor.
+    
+    If multiple phone numbers are found, only the first one is used.
+    This cannot be guaranteed to align with the `address` field.
+    """
+    email: str = None
+    """ A string representing the email address of the contractor. """
 
     def __init__(self, title: str, description: str, url: str):
         self.title = title
@@ -17,6 +38,43 @@ class Contractor(object):
         """ Add service to local list """
         if service not in self.services:
             self.services.append(service)
+
+    def set_address(self, address: str) -> NoReturn:
+        """ Update address string
+
+        This is to be used as a callback from future scraper classes.
+        """
+        # TODO: eventually, this should accept a list of addresses
+        self.address = address
+
+    def set_location(self, location: str) -> NoReturn:
+        """ Update location string
+
+        This is to be used as a callback from future scraper classes.
+        """
+        self.location = location
+
+    def add_project(self, project: str) -> NoReturn:
+        """ Add project to local list
+
+        This is to be used as a callback from future scraper classes.
+        """
+        if project not in self.projects:
+            self.projects.append(project)
+
+    def set_phone(self, phone: str) -> NoReturn:
+        """ Update phone string
+
+        This is to be used as a callback from future scraper classes.
+        """
+        self.phone = phone
+
+    def set_email(self, email: str) -> NoReturn:
+        """ Update email string
+
+        This is to be used as a callback from future scraper classes.
+        """
+        self.email = email
 
     def __repr__(self) -> str:
         return f"<Contractor: {self.title}; url: {self.url}; description: {self.description}>"
