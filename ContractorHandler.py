@@ -8,6 +8,7 @@ from requests.utils import default_headers
 from bs4 import BeautifulSoup, Tag
 
 from models import Contractor
+from parsers.EmailScraper import EmailScraper
 from parsers.AddressScraper import AddressScraper
 from parsers.PhoneScraper import PhoneScraper
 
@@ -25,6 +26,7 @@ class ContractorHandler:
     """
     _address_scraper: ClassVar[AddressScraper] = AddressScraper()
     _phone_scraper: ClassVar[PhoneScraper] = PhoneScraper()
+    _email_scraper: ClassVar[EmailScraper] = EmailScraper()
     contractors: dict[str, Contractor] = dict()
 
     @staticmethod
@@ -85,12 +87,16 @@ class ContractorHandler:
         # TODO: all scraping should be awaited by gathering a list of coroutines
         await self._address_scraper(content, contractor.url, contractor.set_address)
         await self._phone_scraper(content, contractor.url, contractor.set_phone)
+        await self._email_scraper(content, contractor.url, contractor.set_email)
 
         if contractor.address is not None:
             print(f"Found address: {contractor.title}: {contractor.address}")
 
         if contractor.phone is not None:
             print(f"Found phone number: {contractor.title}: {contractor.phone}")
+
+        if contractor.email is not None:
+            print(f"Found email: {contractor.title}: {contractor.email}")
 
     async def handle_contractors(self, contractors: [Contractor]) -> NoReturn:
         """ Handle contractors that are found by `SearchParser`.
