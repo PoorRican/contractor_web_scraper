@@ -2,14 +2,14 @@
 import asyncio
 
 from parsers import SearchParser
-from ContractorHandler import ContractorHandler
+from ResultsHandler import ResultsHandler
 
 # TODO: move this to an .env file
 TERMS: list[str] = ["Pennsylvania residential contractor"]
 
 if __name__ == '__main__':
-    handler = ContractorHandler()
-    finder = SearchParser(handler.handle_contractors)
+    handler = ResultsHandler()
+    finder = SearchParser(handler.handle_results)
 
     asyncio.run(finder(TERMS))
 

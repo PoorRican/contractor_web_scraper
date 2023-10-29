@@ -58,7 +58,7 @@ class SearchParser:
 
     This is a functor which accepts a list of search terms, then parses each search result. A `Contractor` object is
     created for each search result that is determined to be a contractor website. For each `Contract` object, the
-    `ContractorHandler` is notified by passing a list of `Contractor` objects to the `on_parse` callback.
+    `ResultsHandler` is notified by passing a list of `Contractor` objects to the `on_parse` callback.
     """
 
     _name_extract_chain: ClassVar[Runnable] = _name_extractor_prompt | MODEL_PARSER

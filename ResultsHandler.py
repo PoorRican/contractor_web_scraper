@@ -9,7 +9,7 @@ from parsers import AddressScraper, EmailScraper, PhoneScraper
 from utils import fetch_site
 
 
-class ContractorHandler:
+class ResultsHandler:
     """ Top-level observer which receives parsed `Contractor` objects.
 
     This class is responsible for saving the parsed data to the database,
@@ -50,7 +50,7 @@ class ContractorHandler:
         if contractor.email is not None:
             print(f"Found email: {contractor.title}: {contractor.email}")
 
-    async def handle_contractors(self, contractors: [Contractor]) -> NoReturn:
+    async def handle_results(self, contractors: [Contractor]) -> NoReturn:
         """ Handle contractors that are found by `SearchParser`.
 
         This will save the contractors to internal storage, then scrape the contractor sites asynchronously.
