@@ -1,10 +1,12 @@
 import asyncio
+import warnings
 from typing import ClassVar, Generator, Any, NoReturn, Callable, Coroutine
 from urllib.parse import urlparse
 
 from googlesearch import search, SearchResult
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
+from requests import ReadTimeout
 
 from models import Contractor
 from llm import LLM, MODEL_PARSER
@@ -142,7 +144,14 @@ class SearchParser:
         Returns:
             Generator of `SearchResult` objects
         """
-        return search(term, advanced=True, num_results=NUM_RESULTS, sleep_interval=1)
+        retries = 5
+        while retries:
+            try:
+                return search(term, advanced=True, num_results=NUM_RESULTS, sleep_interval=1)
+            except ReadTimeout:
+                retries -= 1
+                warnings.warn(f"Retrying search for '{term}'")
+        raise ReadTimeout('Retried 5 times')
 
     async def __call__(self, terms: list[str]) -> NoReturn:
         """ Handles searches for each term in `terms`.
