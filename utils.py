@@ -1,8 +1,12 @@
+from typing import NoReturn
+
 import aiohttp
 from aiohttp_retry import RetryClient
 
 from requests.utils import default_headers
 from bs4 import BeautifulSoup, Tag
+
+from models import Contractor
 
 
 async def fetch_site(url: str) -> Tag:
@@ -57,3 +61,10 @@ def strip_html_attrs(content: Tag) -> Tag:
     for tag in content.find_all(True):
         tag.attrs = {}
     return content
+
+
+def export_contractors(contractors: dict[str, Contractor]) -> NoReturn:
+    with open('results.txt', 'w') as f:
+        for contractor in contractors.values():
+            pretty = contractor.pretty()
+            f.write(pretty)

@@ -3,7 +3,7 @@ import asyncio
 
 from parsers import SearchParser
 from ResultsHandler import ResultsHandler
-
+from utils import export_contractors
 
 if __name__ == '__main__':
 
@@ -17,7 +17,4 @@ if __name__ == '__main__':
 
     print(f"Found {len(handler.contractors)} contractors")
 
-    with open('results.txt', 'w') as f:
-        for contractor in handler.contractors.values():
-            pretty = contractor.pretty()
-            f.write(pretty)
+    export_contractors(handler.contractors)
