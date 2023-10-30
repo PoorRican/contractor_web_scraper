@@ -6,3 +6,8 @@ notebooks/
 
 # local LLM cache
 .langchain.db
+
+# Local data files
+.env
+terms.txt
+results.txt

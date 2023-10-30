@@ -4,10 +4,12 @@ import asyncio
 from parsers import SearchParser
 from ResultsHandler import ResultsHandler
 
-# TODO: move this to an .env file
-TERMS: list[str] = ["Pennsylvania residential contractor"]
 
 if __name__ == '__main__':
+
+    with open('terms.txt', 'r') as f:
+        TERMS: list[str] = f.read().split('\n')
+
     handler = ResultsHandler()
     finder = SearchParser(handler.handle_results)
 
