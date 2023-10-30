@@ -68,3 +68,4 @@ def export_contractors(contractors: dict[str, Contractor]) -> NoReturn:
         for contractor in contractors.values():
             pretty = contractor.pretty()
             f.write(pretty)
+            f.write('\n\n')
