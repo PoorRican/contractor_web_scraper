@@ -92,8 +92,8 @@ class SiteCrawler:
         """
         try:
             content = await fetch_site(url)
-        except ClientTimeout:
-            warnings.warn(f"Timed out while fetching site: {url}")
+        except Exception as e:
+            warnings.warn(f"Error while fetching site: {url}. Error: {e}")
             return
 
         # create a list of scraper coroutines and callbacks
