@@ -1,7 +1,7 @@
 import warnings
 from abc import abstractmethod, ABC
 from copy import copy
-from typing import Union, NoReturn
+from typing import Union
 
 from bs4 import Tag
 from langchain.schema.runnable import Runnable
@@ -115,5 +115,4 @@ class TextSnippetScraper(ABC):
                 callback(snippet)
                 return True
 
-        warnings.warn(f"Could not find {self._search_type} on site: {url}")
         return False
