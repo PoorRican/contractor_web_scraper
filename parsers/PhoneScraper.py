@@ -1,10 +1,12 @@
 from typing import ClassVar
 
+from bs4 import Tag
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
 
 from llm import LONG_MODEL_PARSER
 from parsers.TextSnippetScraper import TextSnippetScraper
+from typedefs import ContractorCallback
 
 
 def _phone_scraper_chain() -> Runnable:
@@ -38,3 +40,13 @@ class PhoneScraper(TextSnippetScraper):
     _chain: ClassVar[Runnable] = _phone_scraper_chain()
     _failure_text: ClassVar[str] = 'no phone number'
     _search_type: ClassVar[str] = 'phone number'
+
+    async def __call__(self, content: Tag, url: str, callback: ContractorCallback) -> bool:
+        """ Look for an email address in the HTML content."""
+        tags = content.find_all('a')
+        for tag in tags:
+            if 'href' in tag.attrs and 'tel:' in tag.attrs['href']:
+                phone = tag.attrs['href'].replace('tel:', '')
+                callback(phone)
+                return True
+        return await super().__call__(content, url, callback)

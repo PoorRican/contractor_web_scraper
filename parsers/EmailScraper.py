@@ -1,10 +1,12 @@
 from typing import ClassVar
 
+from bs4 import Tag
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
 
 from llm import LONG_MODEL_PARSER
 from parsers.TextSnippetScraper import TextSnippetScraper
+from typedefs import ContractorCallback
 
 
 def _email_scraper_chain() -> Runnable:
@@ -39,3 +41,12 @@ class EmailScraper(TextSnippetScraper):
     _chain: ClassVar[Runnable] = _email_scraper_chain()
     _failure_text: ClassVar[str] = 'no email address'
     _search_type: ClassVar[str] = 'email address'
+
+    async def __call__(self, content: Tag, url: str, callback: ContractorCallback) -> bool:
+        """ Look for an email address in the HTML content."""
+        for tag in content.find_all('a'):
+            if 'href' in tag.attrs and 'mailto' in tag.attrs['href']:
+                email = tag.attrs['href'].replace('mailto:', '')
+                callback(email)
+                return True
+        return await super().__call__(content, url, callback)
