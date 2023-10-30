@@ -72,8 +72,20 @@ class TextSnippetScraper(ABC):
             # TODO: break down content into smaller pieces
         return None
 
-    async def __call__(self, content: Tag, url: str, callback: ContractorCallback) -> NoReturn:
-        """ Scrape snippet from HTML content """
+    async def __call__(self, content: Tag, url: str, callback: ContractorCallback) -> bool:
+        """ Scrape snippet from HTML content.
+
+        This will attempt to scrape a snippet from the HTML content. If a snippet is found, it will be passed to the
+        callback function. If no snippet is found, a warning will be raised.
+
+        Parameters:
+            content: HTML content to scrape snippet from
+            url: URL of the HTML content. This is used in the warning message.
+            callback: callback function to pass snippet to
+
+        Returns:
+            True if snippet was found, False otherwise
+        """
         _content = strip_html_attrs(copy(content))
 
         # attempt to find snippet in footer or header
@@ -82,7 +94,8 @@ class TextSnippetScraper(ABC):
             if section is not None:
                 snippet = await self._process(section)
                 if snippet is not None:
-                    return callback(snippet)
+                    callback(snippet)
+                    return True
 
         # begin to look at all small text snippets
         for i in ('p', 'span', 'a'):
@@ -90,7 +103,8 @@ class TextSnippetScraper(ABC):
             for section in sections:
                 snippet = await self._process(section)
                 if snippet is not None:
-                    return callback(snippet)
+                    callback(snippet)
+                    return True
 
         # as a last resort, look at first and last chunks
         chunk_size = 5000
@@ -98,7 +112,8 @@ class TextSnippetScraper(ABC):
         for i in (first, last):
             snippet = await self._process(i)
             if snippet is not None:
-                return callback(snippet)
+                callback(snippet)
+                return True
 
         warnings.warn(f"Could not find {self._search_type} on site: {url}")
-        return
+        return False

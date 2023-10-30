@@ -1,12 +1,8 @@
 import asyncio
 from typing import NoReturn, ClassVar
-import warnings
-
-from aiohttp import ClientTimeout
 
 from models import Contractor
-from parsers import AddressScraper, EmailScraper, PhoneScraper
-from utils import fetch_site
+from parsers import AddressScraper, EmailScraper, PhoneScraper, SiteCrawler
 
 
 class ResultsHandler:
@@ -17,29 +13,19 @@ class ResultsHandler:
     thread.
 
     Attributes:
-        _address_scraper: `AddressScraper` functor to scrape addresses from contractor sites
         contractors: dict of parsed `Contractor` objects
     """
-    _address_scraper: ClassVar[AddressScraper] = AddressScraper()
-    _phone_scraper: ClassVar[PhoneScraper] = PhoneScraper()
-    _email_scraper: ClassVar[EmailScraper] = EmailScraper()
     contractors: dict[str, Contractor] = dict()
 
-    async def _scrape(self, contractor: Contractor) -> NoReturn:
+    @staticmethod
+    async def _scrape(contractor: Contractor) -> NoReturn:
         """ Asynchronously process a single contractor.
 
         This will fetch the contractor site, then scrape the address from the site.
         """
-        try:
-            content = await fetch_site(contractor.url)
-        except ClientTimeout:
-            warnings.warn(f"Timed out while fetching site: {contractor.url}")
-            return
 
-        # TODO: all scraping should be awaited by gathering a list of coroutines
-        await self._address_scraper(content, contractor.url, contractor.set_address)
-        await self._phone_scraper(content, contractor.url, contractor.set_phone)
-        await self._email_scraper(content, contractor.url, contractor.set_email)
+        crawler = SiteCrawler(contractor)
+        await crawler()
 
         if contractor.address is not None:
             print(f"Found address: {contractor.title}: {contractor.address}")
