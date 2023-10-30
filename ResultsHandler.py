@@ -27,15 +27,6 @@ class ResultsHandler:
         crawler = SiteCrawler(contractor)
         await crawler()
 
-        if contractor.address is not None:
-            print(f"Found address: {contractor.title}: {contractor.address}")
-
-        if contractor.phone is not None:
-            print(f"Found phone number: {contractor.title}: {contractor.phone}")
-
-        if contractor.email is not None:
-            print(f"Found email: {contractor.title}: {contractor.email}")
-
     async def handle_results(self, contractors: [Contractor]) -> NoReturn:
         """ Handle contractors that are found by `SearchParser`.
 

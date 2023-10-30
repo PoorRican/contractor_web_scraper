@@ -78,3 +78,24 @@ class Contractor(object):
 
     def __repr__(self) -> str:
         return f"<Contractor: {self.title}; url: {self.url}; description: {self.description}>"
+
+    def pretty(self):
+        msg = f"Contractor: {self.title}\n"
+        msg += f"URL: {self.url}\n"
+        msg += f"Description: {self.description}\n"
+
+        if self.phone:
+            msg += f"Phone: {self.phone}\n"
+        if self.email:
+            msg += f"Email: {self.email}\n"
+        if self.address:
+            msg += f"Address: {self.address}\n"
+
+        if self.services:
+            msg += f"Services: {self.services}\n"
+        if self.location:
+            msg += f"Location: {self.location}\n"
+        if self.projects:
+            msg += f"Projects: {self.projects}\n"
+
+        return msg
