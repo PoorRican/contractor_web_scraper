@@ -16,5 +16,8 @@ if __name__ == '__main__':
     asyncio.run(finder(TERMS))
 
     print(f"Found {len(handler.contractors)} contractors")
-    for contractor in handler.contractors.values():
-        print(contractor.pretty(), end='\n\n')
+
+    with open('results.txt', 'w') as f:
+        for contractor in handler.contractors.values():
+            pretty = contractor.pretty()
+            f.write(pretty)
