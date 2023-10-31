@@ -145,7 +145,7 @@ class SearchParser:
         Returns:
             Generator of `SearchResult` objects
         """
-        print(f"Fetching search for '{term}'")
+        print(f"\nFetching search for '{term}'")
         max_retries = 10
         retries = 0
         while retries < max_retries:
@@ -188,12 +188,12 @@ class SearchParser:
         # any result that is a contractor site will be True
         contractor_sites = await asyncio.gather(*[self._is_contractor_site(result) for result in results])
 
-        print("Extracting contractors...")
         # for each contractor site, extract the contractor data
         routines = []
         for result, _extract in zip(results, contractor_sites):
             if _extract:
                 routines.append(self._extract_contractor(result))
         contractors = await asyncio.gather(*routines)
+        print(f"Extracted {len(contractors)} contractors from {len(results)}")
 
         await self._on_parse(contractors)
