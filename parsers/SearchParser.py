@@ -1,12 +1,13 @@
 import asyncio
 import warnings
+from asyncio import sleep
 from typing import ClassVar, Generator, Any, NoReturn, Callable, Coroutine
 from urllib.parse import urlparse
 
 from googlesearch import search, SearchResult
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
-from requests import ReadTimeout
+from requests import ReadTimeout, HTTPError
 
 from models import Contractor
 from llm import LLM, MODEL_PARSER
@@ -133,7 +134,7 @@ class SearchParser:
         return Contractor(await name, desc, url)
 
     @staticmethod
-    def _perform_search(term: str) -> SearchResults:
+    async def _perform_search(term: str) -> SearchResults:
         """ Wrapper for `googlesearch.search`
 
         This uses `NUM_RESULTS` as the number of results to fetch.
@@ -144,13 +145,18 @@ class SearchParser:
         Returns:
             Generator of `SearchResult` objects
         """
-        retries = 5
-        while retries:
+        print(f"Fetching search for '{term}'")
+        max_retries = 10
+        retries = 0
+        while retries < max_retries:
             try:
-                return search(term, advanced=True, num_results=NUM_RESULTS, sleep_interval=1)
-            except ReadTimeout:
-                retries -= 1
-                warnings.warn(f"Retrying search for '{term}'")
+                results = search(term, advanced=True, num_results=NUM_RESULTS, sleep_interval=1)
+                return [result for result in results]
+            except (ReadTimeout, HTTPError) as e:
+                retries += 1
+                time = pow(retries, 3)
+                warnings.warn(f"Retrying search for '{term}' after {time}s. Error: {e}")
+                await sleep(time)
         raise ReadTimeout('Retried 5 times')
 
     async def __call__(self, terms: list[str]) -> NoReturn:
@@ -163,7 +169,7 @@ class SearchParser:
         """
         # TODO: this could be parallelized
         for term in terms:
-            results = self._perform_search(term)
+            results = await self._perform_search(term)
             print("Fetched search...processing results")
             await self._parse_results(results)
 
@@ -178,8 +184,6 @@ class SearchParser:
         Parameters:
             results: generator of `SearchResult` objects to parse. This should be the output of `googlesearch.search()`.
         """
-        results = [result for result in results]
-
         # parse all results into an array of booleans
         # any result that is a contractor site will be True
         contractor_sites = await asyncio.gather(*[self._is_contractor_site(result) for result in results])

@@ -10,5 +10,5 @@ LLMInput = Union[Tag, PageElement, str]
 ContractorCallback = Callable[[str], NoReturn]
 """ A callback function to set a `Contractor` attribute. """
 
-SearchResults = Generator[SearchResult, Any, None]
-""" A generator of `SearchResult` objects. """
+SearchResults = list[SearchResult]
+""" A list of `SearchResult` objects. """
