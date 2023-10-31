@@ -102,10 +102,10 @@ class SearchParser:
             'description': description
         })
         response = response.strip()
-        if response == 'contractor':
-            return True
-        elif response == 'not contractor':
+        if 'not contractor' in response.lower():
             return False
+        elif 'contractor' in response.lower():
+            return True
         else:
             raise ValueError(f"`_is_contractor_chain` returned ambiguous output: '{response}'")
 
