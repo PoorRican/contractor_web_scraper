@@ -11,3 +11,4 @@ notebooks/
 .env
 terms.txt
 results.txt
+*.csv

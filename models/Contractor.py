@@ -1,8 +1,10 @@
-from typing import NoReturn
+from typing import NoReturn, ClassVar
 
 
 class Contractor(object):
     """ Abstraction for parsed contractor data """
+    fields: ClassVar[list[str]] = ('title', 'description', 'url', 'phone', 'email', 'address')
+
     title: str
     description: str
     url: str
@@ -33,6 +35,32 @@ class Contractor(object):
         self.title = title
         self.description = description
         self.url = url
+
+    @staticmethod
+    def from_row(
+            title: str,
+            description: str,
+            url: str,
+            phone: str,
+            email: str,
+            address: str
+    ) -> 'Contractor':
+        """ Factory to create a `Contractor` object from a CSV row """
+        obj = Contractor(title, description, url)
+        obj.email = email
+        obj.phone = phone
+        obj.address = address
+        return obj
+
+    def to_row(self) -> dict:
+        return {
+            'title': self.title,
+            'description': self.description,
+            'url': self.url,
+            'phone': self.phone,
+            'email': self.email,
+            'address': self.address
+        }
 
     def add_service(self, service: str) -> NoReturn:
         """ Add service to local list """

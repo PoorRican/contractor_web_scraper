@@ -1,8 +1,13 @@
 import asyncio
-from typing import NoReturn, ClassVar
+from csv import DictReader, DictWriter
+from os.path import exists
+from typing import NoReturn
 
 from models import Contractor
-from parsers import AddressScraper, EmailScraper, PhoneScraper, SiteCrawler
+from parsers import SiteCrawler
+
+
+FILENAME = 'contractors.csv'
 
 
 class ResultsHandler:
@@ -16,6 +21,9 @@ class ResultsHandler:
         contractors: dict of parsed `Contractor` objects
     """
     contractors: dict[str, Contractor] = dict()
+
+    def __init__(self):
+        self.load()
 
     @staticmethod
     async def _scrape(contractor: Contractor) -> NoReturn:
@@ -44,3 +52,39 @@ class ResultsHandler:
                 print(f"Encountered duplicate entry '{contractor.title}'")
 
         await asyncio.gather(*routines)
+        self.save()
+
+    def load(self) -> NoReturn:
+        if exists(FILENAME):
+            self._read()
+            print(f"Read {len(self.contractors)} objects from local storage!")
+        else:
+            print(f"Local storage '{FILENAME}' does not exist. Starting database from scratch!")
+
+    def save(self) -> NoReturn:
+        self._write()
+        print(f"Saved {len(self.contractors)} objects to local storage!")
+
+    def _read(self):
+        """ load parsed contractors from local CSV file """
+        with open(FILENAME, 'r') as f:
+            reader = DictReader(f, fieldnames=Contractor.fields)
+            _ = reader.__next__()       # throw out the header row
+            for row in reader:
+                title = row['title']
+                description = row['description']
+                url = row['url']
+                phone = row['phone']
+                email = row['email']
+                address = row['address']
+
+                contractor = Contractor.from_row(title, description, url, phone, email, address)
+                self.contractors[contractor.title] = contractor
+
+    def _write(self):
+        """ write parsed contractors to local CSV file """
+        with open(FILENAME, 'w') as f:
+            writer = DictWriter(f, fieldnames=Contractor.fields)
+            writer.writeheader()
+            for contractor in self.contractors.values():
+                writer.writerow(contractor.to_row())
