@@ -98,7 +98,7 @@ class TextSnippetScraper(ABC):
                     return True
 
         # begin to look at all small text snippets
-        for i in ('p', 'span', 'a'):
+        for i in ('p', 'span', 'a', 'strong', 'li'):
             sections = _content.find_all(i)
             for section in sections:
                 snippet = await self._process(section)
