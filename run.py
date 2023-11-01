@@ -1,11 +1,13 @@
 """ Run `SearchParser` with `TERMS` """
 import asyncio
+from dotenv import load_dotenv
 
 from parsers import SearchParser
 from ResultsHandler import ResultsHandler
 from utils import export_contractors
 
 if __name__ == '__main__':
+    load_dotenv()  # load environment variables from .env.
 
     with open('terms.txt', 'r') as f:
         TERMS: list[str] = f.read().split('\n')

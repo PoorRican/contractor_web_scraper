@@ -1,8 +1,10 @@
+from dotenv import load_dotenv
 from langchain.chat_models import ChatOpenAI
 from langchain.schema.output_parser import StrOutputParser
 from langchain.cache import SQLiteCache
 from langchain.globals import set_llm_cache
 
+load_dotenv()  # load environment variables from .env.
 
 set_llm_cache(SQLiteCache(database_path=".langchain.db"))
 
