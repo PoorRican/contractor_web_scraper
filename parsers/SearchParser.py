@@ -1,8 +1,7 @@
 import asyncio
 import warnings
 from asyncio import sleep
-from typing import ClassVar, Generator, Any, NoReturn, Callable, Coroutine
-from urllib.parse import urlparse
+from typing import ClassVar, Any, NoReturn, Callable, Coroutine
 
 from googlesearch import search, SearchResult
 from langchain.prompts import PromptTemplate
@@ -129,7 +128,7 @@ class SearchParser:
         })
         desc = result.description
         # remove path and params from URL
-        url = urlparse(result.url)._replace(path='')._replace(params='').geturl()
+        url = strip_url(result.url)
 
         return Contractor(await name, desc, url)
 

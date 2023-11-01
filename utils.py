@@ -1,4 +1,5 @@
 from typing import NoReturn
+from urllib.parse import urlparse
 
 import aiohttp
 from aiohttp_retry import RetryClient
@@ -69,3 +70,15 @@ def export_contractors(contractors: dict[str, Contractor]) -> NoReturn:
             pretty = contractor.pretty()
             f.write(pretty)
             f.write('\n\n')
+
+
+def strip_url(url: str) -> str:
+    """ Strip URL of all query parameters and path.
+
+    Parameters:
+        url: URL to strip
+
+    Returns:
+        URL with all query parameters and path removed
+    """
+    return urlparse(url)._replace(path='')._replace(params='').geturl()
