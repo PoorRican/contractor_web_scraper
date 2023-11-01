@@ -9,8 +9,10 @@ from langchain.schema.runnable import Runnable
 from requests import ReadTimeout, HTTPError
 
 from models import Contractor
-from llm import LLM, MODEL_PARSER
+from llm import MODEL_PARSER
+from parsers.ResultChecker import ResultChecker
 from typedefs import SearchResults
+from utils import strip_url
 
 NUM_RESULTS: int = 100
 
@@ -29,32 +31,6 @@ _name_extractor_prompt = PromptTemplate.from_template(
 )
 
 
-_description_expand_prompt = PromptTemplate.from_template(
-    """ You will be given the title, URL, and description of a search result.
-    
-    Here is the title: {title}
-    Here is the URL: {url}
-    Here is the description: {description}
-    
-    
-    Please explain what this page is about in one sentence.
-    Does this page directly represent construction company website?
-    
-    """
-)
-
-
-_is_contractor_prompt = PromptTemplate.from_template(
-    """Given an explanation of a search result,
-    determine if it directly represents a webpage for a construction contractor company website.
-    Return 'contractor' if it is,
-    and 'not contractor' if it does not directly represent a contractor company website.
-    
-    {explanation}
-    """
-)
-
-
 class SearchParser:
     """ Perform search and filter contractor websites via LLM.
 
@@ -68,46 +44,14 @@ class SearchParser:
      
     This is used by `_extract_contractor()` to extract the company name from a search result.
     """
-    _expand_chain: ClassVar[Runnable] = _description_expand_prompt | LLM
-    _is_contractor_chain: ClassVar[Runnable] = {'explanation': _expand_chain} | _is_contractor_prompt | MODEL_PARSER
-    """ Chain to determine if a search result is a contractor site.
-    
-    This is used by `_is_contractor_site()` to determine if a search result is a contractor site.
-    """
+
+    _is_contractor_site: ClassVar[ResultChecker] = ResultChecker()
 
     _on_parse: Callable[[[Contractor]], Coroutine[Any, Any, None]]
     """ Asynchronous callback for handling batches of `Contractor` objects. """
 
     def __init__(self, on_parse: Callable[[[Contractor]], Coroutine[Any, Any, None]]):
         self._on_parse = on_parse
-
-    @classmethod
-    async def _is_contractor_site(cls, result: SearchResult) -> bool:
-        """ Detect if site is a company site based on search result.
-
-        This uses the `_is_contractor_chain` to determine if the search result is a contractor site.
-
-        Parameters:
-            result: `SearchResult` object to check
-
-        Returns:
-            True if site is a contractor site, False otherwise
-        """
-        title = result.title
-        url = result.url
-        description = result.description
-        response = await cls._is_contractor_chain.ainvoke({
-            'title': title,
-            'url': url,
-            'description': description
-        })
-        response = response.strip()
-        if 'not contractor' in response.lower():
-            return False
-        elif 'contractor' in response.lower():
-            return True
-        else:
-            raise ValueError(f"`_is_contractor_chain` returned ambiguous output: '{response}'")
 
     @classmethod
     async def _extract_contractor(cls, result: SearchResult) -> Contractor:
