@@ -1,13 +1,18 @@
+import os
 from typing import NoReturn
 from urllib.parse import urlparse
 
-import aiohttp
 from aiohttp_retry import RetryClient
+import requests
+from dotenv import load_dotenv
 
 from requests.utils import default_headers
 from bs4 import BeautifulSoup, Tag
 
 from models import Contractor
+from typedefs import SearchResult, SearchResults
+
+load_dotenv()
 
 
 async def fetch_site(url: str) -> Tag:
@@ -82,3 +87,41 @@ def strip_url(url: str) -> str:
         URL with all query parameters and path removed
     """
     return urlparse(url)._replace(path='')._replace(params='').geturl()
+
+
+def _perform_search(query: str, offset: int = 0) -> SearchResults:
+    """ Wrapper for `googlesearch.search`
+
+    This uses `NUM_RESULTS` as the number of results to fetch.
+
+    Parameters:
+        query: search term to use
+
+    Returns:
+        Generator of `SearchResult` objects
+    """
+    endpoint = 'https://api.bing.microsoft.com/v7.0/search'
+    subscription_key = os.environ['BING_SEARCH_V7_SUBSCRIPTION_KEY']
+
+    headers = {'Ocp-Apim-Subscription-Key': subscription_key}
+    mkt = 'en-US'
+    params = {'q': query, 'mkt': mkt, 'responseFilters': 'webpages', 'count': 25, 'offset': offset}
+    response = requests.get(endpoint, headers=headers, params=params)
+    response.raise_for_status()
+    data = response.json()
+
+    results = []
+    for result in data['webPages']['value']:
+        results.append(SearchResult(result['name'], result['snippet'], result['url']))
+    return results
+
+
+def perform_search(query: str, num_results: int = 100) -> SearchResults:
+    assert num_results % 25 == 0, "num_results must be a multiple of 25"
+
+    print(f"\nFetching search for '{query}'")
+
+    results = []
+    for offset in range(0, num_results, 25):
+        results.extend(_perform_search(query, offset))
+    return results

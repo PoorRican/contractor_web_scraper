@@ -1,12 +1,8 @@
-from operator import itemgetter
-from typing import ClassVar
-
-from googlesearch import SearchResult, search
 from langchain.prompts import PromptTemplate
-from langchain.schema.runnable import Runnable, RunnableParallel
+from langchain.schema.runnable import RunnableParallel
 
-from llm import LLM, MODEL_PARSER
-from utils import strip_url
+from llm import MODEL_PARSER
+from typedefs import SearchResult
 
 _description_expand_prompt = PromptTemplate.from_template(
     """ You will be given the title, URL, and description of a search result.
@@ -121,7 +117,7 @@ class ResultChecker:
     async def __call__(cls, result: SearchResult) -> bool:
         title = result.title
         description = result.description
-        url = strip_url(result.url)
+        url = result.url
 
         response = await cls._chain.ainvoke({
             'title': title,
