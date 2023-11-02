@@ -3,12 +3,9 @@ import warnings
 from enum import Enum
 from typing import NoReturn
 
-from aiohttp import ClientTimeout
-
 from models import Contractor
 from parsers import AddressScraper, PhoneScraper, EmailScraper
 from parsers.TextSnippetScraper import TextSnippetScraper
-from typedefs import ContractorCallback
 from utils import fetch_site
 
 
@@ -33,14 +30,14 @@ class _FieldType(Enum):
         else:
             raise ValueError(f"Unknown field type: {self}")
 
-    def get_callback(self, contractor: Contractor) -> ContractorCallback:
+    def get_callback_name(self) -> str:
         """ Return the corresponding callback for this field type """
         if self == self.address:
-            return contractor.set_address
+            return 'set_address'
         elif self == self.email:
-            return contractor.set_email
+            return 'set_email'
         elif self == self.phone:
-            return contractor.set_phone
+            return 'set_phone'
         else:
             raise ValueError(f"Unknown field type: {self}")
 
@@ -99,8 +96,8 @@ class SiteCrawler:
 
         # create a list of scraper coroutines and callbacks
         scrapers = [field.get_scraper() for field in self._fields]
-        callbacks = [field.get_callback(self._contractor) for field in self._fields]
-        coroutines = [scrapers[i](content, url, callbacks[i]) for i in range(len(scrapers))]
+        callbacks = [field.get_callback_name() for field in self._fields]
+        coroutines = [scrapers[i](content, url, self._contractor, callbacks[i]) for i in range(len(scrapers))]
 
         # run all scrapers concurrently
         results = await asyncio.gather(*coroutines)

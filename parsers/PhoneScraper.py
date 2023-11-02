@@ -5,6 +5,7 @@ from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
 
 from llm import LONG_MODEL_PARSER
+from models import Contractor
 from parsers.TextSnippetScraper import TextSnippetScraper
 from typedefs import ContractorCallback
 
@@ -41,13 +42,12 @@ class PhoneScraper(TextSnippetScraper):
     _failure_text: ClassVar[str] = 'no phone number'
     _search_type: ClassVar[str] = 'phone number'
 
-    async def __call__(self, content: Tag, url: str, callback: Optional[ContractorCallback] = None) -> bool:
+    async def __call__(self, content: Tag, url: str, contractor: Contractor, callback: str) -> bool:
         """ Look for a phone number in the HTML content. """
         tags = content.find_all('a')
         for tag in tags:
             if 'href' in tag.attrs and 'tel:' in tag.attrs['href']:
                 phone = tag.attrs['href'].replace('tel:', '')
-                if callback is not None:
-                    callback(phone)
+                self._run_callback(contractor, callback, phone)
                 return True
-        return await super().__call__(content, url, callback)
+        return await super().__call__(content, url, contractor, callback)

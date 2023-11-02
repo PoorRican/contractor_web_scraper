@@ -1,14 +1,14 @@
 import asyncio
-import warnings
-from abc import abstractmethod, ABC
+from abc import ABC
 from copy import copy
-from typing import Union, Optional, Generator, ClassVar
+from typing import Union, Generator, ClassVar
 
 from bs4 import Tag
 from langchain.schema.runnable import Runnable
 from openai import InvalidRequestError
 
-from typedefs import LLMInput, ContractorCallback
+from models import Contractor
+from typedefs import LLMInput
 from utils import strip_html_attrs
 
 
@@ -70,7 +70,7 @@ class TextSnippetScraper(ABC):
                     chunks = []
 
     @classmethod
-    async def _process_chunks(cls, chunks: list[Tag], callback: Optional[ContractorCallback] = None) -> bool:
+    async def _process_chunks(cls, chunks: list[Tag], contractor: Contractor, callback: str) -> bool:
         """ Simultaneously process a list of chunks and call the callback function if a snippet is found.
 
         Parameters:
@@ -83,12 +83,22 @@ class TextSnippetScraper(ABC):
         coroutines = await asyncio.gather(*[cls._process(chunk) for chunk in chunks])
         for result in coroutines:
             if result is not None:
-                if callback is not None:
-                    callback(result)
+                cls._run_callback(contractor, callback, result)
                 return True
         return False
 
-    async def __call__(self, content: Tag, url: str, callback: Optional[ContractorCallback] = None) -> bool:
+    @staticmethod
+    def _run_callback(contractor: Contractor, callback_name: str, snippet: str) -> None:
+        """ Run a callback function on a `Contractor` object.
+
+        Parameters:
+            contractor: `Contractor` object to update
+            callback_name: name of callback function
+            snippet: snippet to pass to callback function
+        """
+        getattr(contractor, callback_name)(snippet)
+
+    async def __call__(self, content: Tag, url: str, contractor: Contractor, callback: str) -> bool:
         """ Scrape snippet from HTML content.
 
         This will attempt to scrape a snippet from the HTML content. If a snippet is found, it will be passed to the
@@ -97,7 +107,8 @@ class TextSnippetScraper(ABC):
         Parameters:
             content: HTML content to scrape snippet from
             url: URL of the HTML content. This is used in the warning message.
-            callback: callback function to pass snippet to
+            contractor: `Contractor` object to update
+            callback: callback name
 
         Returns:
             True if snippet was found, False otherwise
@@ -110,13 +121,12 @@ class TextSnippetScraper(ABC):
             if section is not None:
                 snippet = await self._process(section)
                 if snippet is not None:
-                    if callback is not None:
-                        callback(snippet)
+                    self._run_callback(contractor, callback, snippet)
                     return True
 
         # begin to look at all small text snippets
         for chunk in self._snippet_chunks(_content):
-            if await self._process_chunks(chunk, callback):
+            if await self._process_chunks(chunk, contractor, callback):
                 return True
 
         # as a last resort, look at first and last chunks
@@ -125,8 +135,7 @@ class TextSnippetScraper(ABC):
         for i in (first, last):
             snippet = await self._process(i)
             if snippet is not None:
-                if callback is not None:
-                    callback(snippet)
+                self._run_callback(contractor, callback, snippet)
                 return True
 
         return False

@@ -5,6 +5,7 @@ from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
 
 from llm import LONG_MODEL_PARSER
+from models import Contractor
 from parsers.TextSnippetScraper import TextSnippetScraper
 from typedefs import ContractorCallback
 
@@ -42,12 +43,11 @@ class EmailScraper(TextSnippetScraper):
     _failure_text: ClassVar[str] = 'no email address'
     _search_type: ClassVar[str] = 'email address'
 
-    async def __call__(self, content: Tag, url: str, callback: Optional[ContractorCallback] = None) -> bool:
+    async def __call__(self, content: Tag, url: str, contractor: Contractor, callback: str) -> bool:
         """ Look for an email address in the HTML content."""
         for tag in content.find_all('a'):
             if 'href' in tag.attrs and 'mailto' in tag.attrs['href']:
                 email = tag.attrs['href'].replace('mailto:', '')
-                if callback is not None:
-                    callback(email)
+                self._run_callback(contractor, callback, email)
                 return True
-        return await super().__call__(content, url, callback)
+        return await super().__call__(content, url, contractor, callback)
