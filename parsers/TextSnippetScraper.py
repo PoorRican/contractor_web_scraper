@@ -1,7 +1,8 @@
+import asyncio
 import warnings
 from abc import abstractmethod, ABC
 from copy import copy
-from typing import Union
+from typing import Union, Optional, Generator, ClassVar
 
 from bs4 import Tag
 from langchain.schema.runnable import Runnable
@@ -23,38 +24,15 @@ class TextSnippetScraper(ABC):
         _failure_text: a string to be returned by LLM when no data is found
         _search_type: a string representing the type of data being scraped. Used for user feedback.
     """
-    @property
-    @abstractmethod
-    def _chain(self) -> Runnable:
-        """ Return a chain of LLM models to extract data from text snippets.
 
-        This should be overridden by subclasses.
-        """
-        raise NotImplementedError
+    _chunk_size: ClassVar[int] = 100
 
-    @property
-    @abstractmethod
-    def _failure_text(self) -> str:
-        """ Return a string to be returned by LLM when no data is found.
+    _chain: ClassVar[Runnable]
+    _failure_text: ClassVar[str]
+    _search_type: ClassVar[str]
 
-        ie: 'no address', 'no phone number', etc.
-
-        This should be overridden by subclasses.
-        """
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def _search_type(self) -> str:
-        """ Return a string representing the type of data being scraped.
-
-        ie: 'address', 'phone number', etc.
-
-        This should be overridden by subclasses and is used for user feedback.
-        """
-        raise NotImplementedError
-
-    async def _process(self, content: LLMInput) -> Union[str, None]:
+    @classmethod
+    async def _process(cls, content: LLMInput) -> Union[str, None]:
         """ Attempt to extract the text snippet from HTML content using `self._chain`.
 
         Parameters:
@@ -64,15 +42,53 @@ class TextSnippetScraper(ABC):
             The extracted snippet, or None if no snippet was found.
         """
         try:
-            result: str = await self._chain.ainvoke({'content': str(content)})
-            if self._failure_text not in result.lower():
+            result: str = await cls._chain.ainvoke({'content': str(content)})
+            if cls._failure_text not in result.lower():
                 return result
         except InvalidRequestError:
-            print(f"InvalidRequestError while scraping {self._search_type}. String might be too many tokens...")
+            print(f"InvalidRequestError while scraping {cls._search_type}. String might be too many tokens...")
             # TODO: break down content into smaller pieces
         return None
 
-    async def __call__(self, content: Tag, url: str, callback: ContractorCallback) -> bool:
+    @classmethod
+    def _snippet_chunks(cls, content: Tag) -> Generator[list[Tag], None, None]:
+        """ Iterate over all small text snippets in the HTML content and yield them in chunks.
+
+        Parameters:
+            content: HTML content to iterate over
+
+        Yields:
+            A list of small text snippets in chunks according to `TextSnippetScraper._chunk_size`
+        """
+        chunks = []
+        for i in ('p', 'span', 'a', 'strong', 'li', 'b', 'u', 'font'):
+            sections = content.find_all(i)
+            for section in sections:
+                chunks.append(section)
+                if len(chunks) >= cls._chunk_size:
+                    yield chunks
+                    chunks = []
+
+    @classmethod
+    async def _process_chunks(cls, chunks: list[Tag], callback: Optional[ContractorCallback] = None) -> bool:
+        """ Simultaneously process a list of chunks and call the callback function if a snippet is found.
+
+        Parameters:
+            chunks: list of chunks to process
+            callback: callback function to execute if snippet is found
+
+        Returns:
+            True if snippet was found, False otherwise
+        """
+        coroutines = await asyncio.gather(*[cls._process(chunk) for chunk in chunks])
+        for result in coroutines:
+            if result is not None:
+                if callback is not None:
+                    callback(result)
+                return True
+        return False
+
+    async def __call__(self, content: Tag, url: str, callback: Optional[ContractorCallback] = None) -> bool:
         """ Scrape snippet from HTML content.
 
         This will attempt to scrape a snippet from the HTML content. If a snippet is found, it will be passed to the
@@ -94,17 +110,14 @@ class TextSnippetScraper(ABC):
             if section is not None:
                 snippet = await self._process(section)
                 if snippet is not None:
-                    callback(snippet)
+                    if callback is not None:
+                        callback(snippet)
                     return True
 
         # begin to look at all small text snippets
-        for i in ('p', 'span', 'a', 'strong', 'li'):
-            sections = _content.find_all(i)
-            for section in sections:
-                snippet = await self._process(section)
-                if snippet is not None:
-                    callback(snippet)
-                    return True
+        for chunk in self._snippet_chunks(_content):
+            if await self._process_chunks(chunk, callback):
+                return True
 
         # as a last resort, look at first and last chunks
         chunk_size = 5000
@@ -112,7 +125,8 @@ class TextSnippetScraper(ABC):
         for i in (first, last):
             snippet = await self._process(i)
             if snippet is not None:
-                callback(snippet)
+                if callback is not None:
+                    callback(snippet)
                 return True
 
         return False

@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 from bs4 import Tag
 from langchain.prompts import PromptTemplate
@@ -41,12 +41,13 @@ class PhoneScraper(TextSnippetScraper):
     _failure_text: ClassVar[str] = 'no phone number'
     _search_type: ClassVar[str] = 'phone number'
 
-    async def __call__(self, content: Tag, url: str, callback: ContractorCallback) -> bool:
-        """ Look for an email address in the HTML content."""
+    async def __call__(self, content: Tag, url: str, callback: Optional[ContractorCallback] = None) -> bool:
+        """ Look for a phone number in the HTML content. """
         tags = content.find_all('a')
         for tag in tags:
             if 'href' in tag.attrs and 'tel:' in tag.attrs['href']:
                 phone = tag.attrs['href'].replace('tel:', '')
-                callback(phone)
+                if callback is not None:
+                    callback(phone)
                 return True
         return await super().__call__(content, url, callback)
