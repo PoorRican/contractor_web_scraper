@@ -110,6 +110,12 @@ class SearchParser:
         # any result that is a contractor site will be True
         contractor_sites = await asyncio.gather(*[self._is_contractor_site(result) for result in results])
 
+        contractor_count = 0
+        for i in contractor_sites:
+            if i:
+                contractor_count += 1
+
+        print(f"Filtered {contractor_count} contractors from {len(results)} results...extracting contractors")
         # for each contractor site, extract the contractor data
         routines = []
         for result, _extract in zip(results, contractor_sites):
