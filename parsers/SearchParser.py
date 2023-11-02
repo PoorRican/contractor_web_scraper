@@ -9,7 +9,7 @@ from llm import MODEL_PARSER
 from parsers.ResultChecker import ResultChecker
 from typedefs import SearchResults, SearchResult
 from utils import strip_url
-from search import perform_search
+from search import Search
 
 NUM_RESULTS: int = 1000
 
@@ -46,6 +46,8 @@ class SearchParser:
 
     _on_parse: Callable[[[Contractor]], Coroutine[Any, Any, None]]
     """ Asynchronous callback for handling batches of `Contractor` objects. """
+
+    search: ClassVar[Search] = Search()
 
     def __init__(self, on_parse: Callable[[[Contractor]], Coroutine[Any, Any, None]]):
         self._on_parse = on_parse
@@ -90,7 +92,7 @@ class SearchParser:
             _runs = NUM_RESULTS // _chunk_size
             run = 1
             for offset in range(0, NUM_RESULTS, _chunk_size):
-                results = perform_search(term, _chunk_size, offset)
+                results = self.search(term, _chunk_size, offset)
                 print(f"Fetched search (run {run}/{_runs})...processing results")
                 run += 1
                 await self._parse_results(results)
