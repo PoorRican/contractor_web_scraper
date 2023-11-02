@@ -3,6 +3,7 @@ from langchain.schema.runnable import RunnableParallel
 
 from llm import MODEL_PARSER
 from typedefs import SearchResult
+from utils import strip_url
 
 _description_expand_prompt = PromptTemplate.from_template(
     """ You will be given the title, URL, and description of a search result.
@@ -117,7 +118,7 @@ class ResultChecker:
     async def __call__(cls, result: SearchResult) -> bool:
         title = result.title
         description = result.description
-        url = result.url
+        url = strip_url(result.url)
 
         response = await cls._chain.ainvoke({
             'title': title,
