@@ -1,4 +1,9 @@
 googlesearch-python
-bs4
+bs4~=0.0.1
 langchain==0.0.324
 openai==0.28.1
+beautifulsoup4~=4.12.2
+requests~=2.31.0
+aiohttp~=3.8.6
+aiohttp-retry~=2.8.3
+python-dotenv==1.0.0

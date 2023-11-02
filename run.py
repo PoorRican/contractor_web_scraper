@@ -1,16 +1,22 @@
-""" Run `ContractorFinder` with `TERMS` """
+""" Run `SearchParser` with `TERMS` """
 import asyncio
+from dotenv import load_dotenv
 
-from ContractorFinder import ContractorFinder
-
-# TODO: move this to an .env file
-TERMS: list[str] = ["Pennsylvania residential contractor"]
+from parsers import SearchParser
+from ResultsHandler import ResultsHandler
+from utils import export_contractors
 
 if __name__ == '__main__':
-    finder = ContractorFinder()
+    load_dotenv()  # load environment variables from .env.
+
+    with open('terms.txt', 'r') as f:
+        TERMS: list[str] = f.read().split('\n')
+
+    handler = ResultsHandler()
+    finder = SearchParser(handler.handle_results)
 
     asyncio.run(finder(TERMS))
 
-    print(f"Found {len(finder.contractors)} contractors")
-    for i in finder.contractors:
-        print(i)
+    print(f"Found {len(handler.contractors)} contractors")
+
+    export_contractors(handler.contractors)
