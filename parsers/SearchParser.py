@@ -8,7 +8,8 @@ from models import Contractor
 from llm import MODEL_PARSER
 from parsers.ResultChecker import ResultChecker
 from typedefs import SearchResults, SearchResult
-from utils import strip_url, perform_search
+from utils import strip_url
+from search import perform_search
 
 NUM_RESULTS: int = 1000
 
@@ -75,16 +76,24 @@ class SearchParser:
     async def __call__(self, terms: list[str]) -> NoReturn:
         """ Handles searches for each term in `terms`.
 
-        Each batch of `Contractor` objects are handled individually by the `_on_parse()` callback.
+        Each batch of `Contractor` objects are handled by the `_parse_results()`.
+
+        Chunking of search results is necessary to avoid hitting OpenAI API and Bing Search API rate limits.
 
         Parameters:
             terms: list of search terms
         """
         # TODO: this could be parallelized
+        _chunk_size = 50
         for term in terms:
-            results = perform_search(term, NUM_RESULTS)
-            print("Fetched search...processing results")
-            await self._parse_results(results)
+            print(f"\nSearching for '{term}'")
+            _runs = NUM_RESULTS // _chunk_size
+            run = 1
+            for offset in range(0, NUM_RESULTS, _chunk_size):
+                results = perform_search(term, _chunk_size, offset)
+                print(f"Fetched search (run {run}/{_runs})...processing results")
+                run += 1
+                await self._parse_results(results)
 
     async def _parse_results(self, results: SearchResults) -> NoReturn:
         """ Parse unfiltered results into `Contractor` objects
@@ -107,6 +116,6 @@ class SearchParser:
             if _extract:
                 routines.append(self._extract_contractor(result))
         contractors = await asyncio.gather(*routines)
-        print(f"Extracted {len(contractors)} contractors from {len(results)} results")
+        print(f"Extracted {len(contractors)} contractors")
 
         await self._on_parse(contractors)

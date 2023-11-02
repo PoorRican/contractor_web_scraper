@@ -80,6 +80,7 @@ class SiteCrawler:
 
         As each page is scraped, it is removed from the list of pages to be scraped.
         """
+        print(f"Scraping {self._contractor.url}")
         while self._fields and self._pages:
             page = self._pages.pop()
             await self._scrape_page(page)
