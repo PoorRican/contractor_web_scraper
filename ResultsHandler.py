@@ -5,7 +5,7 @@ from typing import NoReturn
 
 from log import logger
 from models import Contractor
-from parsers import SiteCrawler
+from handlers import SiteCrawler
 
 
 FILENAME = 'contractors.csv'
