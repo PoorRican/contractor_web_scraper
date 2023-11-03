@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from abc import ABC
 from copy import copy
 from typing import Union, Generator, ClassVar
@@ -8,6 +7,7 @@ from bs4 import Tag
 from langchain.schema.runnable import Runnable
 from openai import InvalidRequestError
 
+from log import logger
 from models import Contractor
 from typedefs import LLMInput
 from utils import strip_html_attrs
@@ -139,6 +139,6 @@ class TextSnippetScraper(ABC):
                 self._run_callback(contractor, callback, snippet)
                 return True
 
-        logging.warning(f"Could not find {self._search_type} snippet in '{url}'")
+        logger.warning(f"Could not extract {self._search_type} snippet from '{url}'")
 
         return False
