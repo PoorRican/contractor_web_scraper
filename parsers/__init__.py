@@ -5,3 +5,4 @@ from .AddressScraper import AddressScraper
 from .EmailScraper import EmailScraper
 from .PhoneScraper import PhoneScraper
 
+from .SiteMapExtrator import SiteMapExtractor

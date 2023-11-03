@@ -1,10 +1,11 @@
 import asyncio
 from enum import Enum
-from typing import NoReturn, Union
+from typing import NoReturn, Union, ClassVar
 
 from log import logger
 from models import Contractor
 from parsers import AddressScraper, PhoneScraper, EmailScraper
+from parsers.SiteMapExtrator import SiteMapExtractor
 from parsers.TextSnippetScraper import TextSnippetScraper
 from typedefs import ContractorCallback
 from utils import fetch_site
@@ -55,6 +56,7 @@ class SiteCrawler:
     it is removed from the list of fields to be scraped. Whenever a page is scraped, it is removed from the list of
     pages to be scraped.
     """
+    _map_extractor: ClassVar[SiteMapExtractor] = SiteMapExtractor()
     _contractor: Contractor
 
     _pages: set[str] = set()
@@ -71,7 +73,6 @@ class SiteCrawler:
         self._fields = default_fields()
         self._contractor = contractor
 
-        # TODO: populate pages from contractor site (home -> about -> contact -> services -> projects -> ...)
         self._pages.add(contractor.url)
 
     async def __call__(self) -> NoReturn:
@@ -79,6 +80,11 @@ class SiteCrawler:
 
         As each page is scraped, it is removed from the list of pages to be scraped.
         """
+        # extract all pages from site map
+        pages = await self._map_extractor(self._contractor.url)
+        self._pages.update(pages)
+
+        # scrape pages until all fields are found or all pages are scraped
         logger.info(f"Scraping {self._contractor.url}")
         while self._fields and self._pages:
             page = self._pages.pop()
