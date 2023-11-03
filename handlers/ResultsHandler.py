@@ -5,10 +5,10 @@ from typing import NoReturn
 
 from log import logger
 from models import Contractor
-from parsers import SiteCrawler
+from .SiteCrawler import SiteCrawler
 
 
-FILENAME = 'contractors.csv'
+FILENAME = '../contractors.csv'
 
 
 class ResultsHandler:
@@ -37,7 +37,7 @@ class ResultsHandler:
         await crawler()
 
     async def handle_results(self, contractors: [Contractor]) -> NoReturn:
-        """ Handle contractors that are found by `SearchParser`.
+        """ Handle contractors that are found by `SearchHandler`.
 
         This will save the contractors to internal storage, then scrape the contractor sites asynchronously.
 
