@@ -8,6 +8,7 @@ notebooks/
 .langchain.db
 
 # Local data files
+logs/
 .env
 terms.txt
 results.txt

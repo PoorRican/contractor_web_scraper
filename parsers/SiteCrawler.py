@@ -1,8 +1,8 @@
 import asyncio
-import warnings
 from enum import Enum
 from typing import NoReturn
 
+from log import logger
 from models import Contractor
 from parsers import AddressScraper, PhoneScraper, EmailScraper
 from parsers.TextSnippetScraper import TextSnippetScraper
@@ -77,7 +77,7 @@ class SiteCrawler:
 
         As each page is scraped, it is removed from the list of pages to be scraped.
         """
-        print(f"Scraping {self._contractor.url}")
+        logger.info(f"Scraping {self._contractor.url}")
         while self._fields and self._pages:
             page = self._pages.pop()
             await self._scrape_page(page)
@@ -91,7 +91,7 @@ class SiteCrawler:
         try:
             content = await fetch_site(url)
         except Exception as e:
-            warnings.warn(f"Error while fetching site: {url}. Error: {e}")
+            logger.error(f"Error while fetching site: {url}. Error: {e}")
             return
 
         # create a list of scraper coroutines and callbacks

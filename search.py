@@ -5,6 +5,7 @@ from typing import Union, ClassVar
 
 import requests
 
+from log import logger
 from typedefs import SearchResults, SearchResult
 
 from dotenv import load_dotenv
@@ -29,7 +30,7 @@ class Search(object):
         delta = datetime.now() - cls._last_run
         t = 60 / cls._rpm
         if delta.seconds < t:
-            print(f"Rate limit hit. Sleeping for {t - delta.seconds} seconds...")
+            logger.warning(f"Rate limit hit. Sleeping for {t - delta.seconds} seconds...")
             sleep(t - delta.seconds)
         cls._last_run = datetime.now()
 
