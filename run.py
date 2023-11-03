@@ -2,8 +2,7 @@
 import asyncio
 from dotenv import load_dotenv
 
-from handlers import SearchHandler
-from ResultsHandler import ResultsHandler
+from handlers import SearchHandler, ResultsHandler
 from utils import export_contractors
 
 if __name__ == '__main__':
