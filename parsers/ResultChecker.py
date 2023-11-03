@@ -1,6 +1,6 @@
 from langchain.prompts import PromptTemplate
-from langchain.schema.runnable import RunnableParallel
 
+from log import logger
 from llm import MODEL_PARSER
 from typedefs import SearchResult
 from utils import strip_url
@@ -75,5 +75,5 @@ class ResultChecker:
         is_contractor = cls._is_contractor(response)
 
         if not is_contractor:
-            print(f"Rejected '{title}': {url} - Description does not indicate contractor site!")
+            logger.debug(f"Rejected '{title}': {url} - Description does not indicate contractor site!")
         return is_contractor

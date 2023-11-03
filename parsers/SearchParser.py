@@ -6,6 +6,7 @@ from langchain.schema.runnable import Runnable
 
 from models import Contractor
 from llm import MODEL_PARSER
+from log import logger
 from parsers.ResultChecker import ResultChecker
 from typedefs import SearchResults, SearchResult
 from utils import strip_url
@@ -88,12 +89,12 @@ class SearchParser:
         # TODO: this could be parallelized
         _chunk_size = 50
         for term in terms:
-            print(f"\nSearching for '{term}'")
+            logger.info(f"Searching for '{term}'")
             _runs = NUM_RESULTS // _chunk_size
             run = 1
             for offset in range(0, NUM_RESULTS, _chunk_size):
                 results = self.search(term, _chunk_size, offset)
-                print(f"Fetched search (run {run}/{_runs})...processing results")
+                logger.info(f"Fetched search (run {run}/{_runs})...processing results")
                 run += 1
                 await self._parse_results(results)
 
@@ -117,13 +118,13 @@ class SearchParser:
             if i:
                 contractor_count += 1
 
-        print(f"Filtered {contractor_count} contractors from {len(results)} results...extracting contractors")
+        logger.info(f"Filtered {contractor_count} contractors from {len(results)} results...extracting contractors")
         # for each contractor site, extract the contractor data
         routines = []
         for result, _extract in zip(results, contractor_sites):
             if _extract:
                 routines.append(self._extract_contractor(result))
         contractors = await asyncio.gather(*routines)
-        print(f"Extracted {len(contractors)} contractors")
+        logger.info(f"Extracted {len(contractors)} contractors")
 
         await self._on_parse(contractors)

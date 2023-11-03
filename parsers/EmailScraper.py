@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from bs4 import Tag
 from langchain.prompts import PromptTemplate
@@ -7,7 +7,6 @@ from langchain.schema.runnable import Runnable
 from llm import LONG_MODEL_PARSER
 from models import Contractor
 from parsers.TextSnippetScraper import TextSnippetScraper
-from typedefs import ContractorCallback
 
 
 def _email_scraper_chain() -> Runnable:

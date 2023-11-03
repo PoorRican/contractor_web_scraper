@@ -3,6 +3,7 @@ from csv import DictReader, DictWriter
 from os.path import exists
 from typing import NoReturn
 
+from log import logger
 from models import Contractor
 from parsers import SiteCrawler
 
@@ -49,7 +50,7 @@ class ResultsHandler:
                 self.contractors[contractor.title] = contractor
                 routines.append(self._scrape(contractor))
             else:
-                print(f"Encountered duplicate entry '{contractor.title}'")
+                logger.debug(f"Encountered duplicate entry '{contractor.title}'")
 
         await asyncio.gather(*routines)
         self.save()
@@ -57,13 +58,13 @@ class ResultsHandler:
     def load(self) -> NoReturn:
         if exists(FILENAME):
             self._read()
-            print(f"Read {len(self.contractors)} objects from local storage!")
+            logger.info(f"Read {len(self.contractors)} objects from local storage!")
         else:
-            print(f"Local storage '{FILENAME}' does not exist. Starting database from scratch!")
+            logger.info(f"Local storage '{FILENAME}' does not exist. Starting database from scratch!")
 
     def save(self) -> NoReturn:
         self._write()
-        print(f"Saved {len(self.contractors)} objects to local storage!")
+        logger.info(f"Saved {len(self.contractors)} objects to local storage!")
 
     def _read(self):
         """ load parsed contractors from local CSV file """

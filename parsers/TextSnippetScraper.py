@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from abc import ABC
 from copy import copy
 from typing import Union, Generator, ClassVar
@@ -137,5 +138,7 @@ class TextSnippetScraper(ABC):
             if snippet is not None:
                 self._run_callback(contractor, callback, snippet)
                 return True
+
+        logging.warning(f"Could not find {self._search_type} snippet in '{url}'")
 
         return False
