@@ -29,7 +29,7 @@ _name_extractor_prompt = PromptTemplate.from_template(
 )
 
 
-class SearchParser:
+class SearchHandler:
     """ Perform search and filter contractor websites via LLM.
 
     This is a functor which accepts a list of search terms, then parses each search result. A `Contractor` object is

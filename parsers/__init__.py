@@ -1,4 +1,4 @@
-from .SearchParser import SearchParser
+from .SearchParser import SearchHandler
 from .ResultChecker import ResultChecker
 
 # text snippet scrapers

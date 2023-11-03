@@ -36,7 +36,7 @@ class ResultChecker:
     """ Functor which checks if a `SearchResult` is a valid company by comparing the `title` and `url`.
 
     If the `url` seems to be valid for the given company, then `True` is given. Otherwise, `False` is returned.
-    This is meant to be used by `SearchParser` to ignore sites which feature valid companies such as local newspapers
+    This is meant to be used by `SearchHandler` to ignore sites which feature valid companies such as local newspapers
     and instead favor actual company websites.
     """
 

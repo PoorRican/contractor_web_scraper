@@ -1,8 +1,8 @@
-""" Run `SearchParser` with `TERMS` """
+""" Run `SearchHandler` with `TERMS` """
 import asyncio
 from dotenv import load_dotenv
 
-from parsers import SearchParser
+from handlers import SearchHandler
 from ResultsHandler import ResultsHandler
 from utils import export_contractors
 
@@ -13,7 +13,7 @@ if __name__ == '__main__':
         TERMS: list[str] = f.read().split('\n')
 
     handler = ResultsHandler()
-    finder = SearchParser(handler.handle_results)
+    finder = SearchHandler(handler.handle_results)
 
     asyncio.run(finder(TERMS))
 
