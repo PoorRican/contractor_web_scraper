@@ -59,7 +59,7 @@ class SiteCrawler:
     _pages: set[str] = set()
     """ A set of URLs to be scraped """
 
-    _fields: set[_FieldType] = default_fields()
+    _fields: set[_FieldType]
     """ A set of fields that are lacking by the `Contractor` object """
 
     def __init__(self, contractor: Contractor):
@@ -67,6 +67,7 @@ class SiteCrawler:
 
         A list of pages to be scraped is initialized with the contractor's URL.
         """
+        self._fields = default_fields()
         self._contractor = contractor
 
         # TODO: populate pages from contractor site (home -> about -> contact -> services -> projects -> ...)
