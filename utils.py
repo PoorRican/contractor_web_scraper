@@ -36,6 +36,9 @@ async def fetch_site(url: str) -> Tag:
     soup = BeautifulSoup(content, 'html.parser')
     body = soup.find('body')
 
+    if body is None:
+        raise ValueError(f"Retrieved HTML did not contain a body")
+
     # kill all unnecessary tags
     tags = ('script', 'img', 'style', 'svg', 'video', 'audio', 'picture', 'iframe', 'i', 'source', 'noscript',
             'link', 'meta', 'head', 'canvas', 'button', 'form', 'input', 'textarea', 'select', 'option',
