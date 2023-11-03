@@ -5,8 +5,9 @@ from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
 
 from llm import LONG_MODEL_PARSER
-from models import Contractor
+from log import logger
 from parsers.TextSnippetScraper import TextSnippetScraper
+from typedefs import ContractorCallback
 
 
 def _email_scraper_chain() -> Runnable:
@@ -42,11 +43,12 @@ class EmailScraper(TextSnippetScraper):
     _failure_text: ClassVar[str] = 'no email address'
     _search_type: ClassVar[str] = 'email address'
 
-    async def __call__(self, content: Tag, url: str, contractor: Contractor, callback: str) -> bool:
+    async def __call__(self, content: Tag, url: str, callback: ContractorCallback) -> bool:
         """ Look for an email address in the HTML content."""
         for tag in content.find_all('a'):
             if 'href' in tag.attrs and 'mailto' in tag.attrs['href']:
                 email = tag.attrs['href'].replace('mailto:', '')
-                self._run_callback(contractor, callback, email)
+                callback(email)
                 return True
-        return await super().__call__(content, url, contractor, callback)
+        logger.debug(f"Traditional scraping could not find phone number in {url}. Deferring to LLM...")
+        return await super().__call__(content, url, callback)

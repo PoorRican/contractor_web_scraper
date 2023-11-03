@@ -8,7 +8,7 @@ from models import Contractor
 from .SiteCrawler import SiteCrawler
 
 
-FILENAME = '../contractors.csv'
+FILENAME = 'contractors.csv'
 
 
 class ResultsHandler:
