@@ -1,11 +1,12 @@
 import asyncio
 from enum import Enum
-from typing import NoReturn
+from typing import NoReturn, Union
 
 from log import logger
 from models import Contractor
 from parsers import AddressScraper, PhoneScraper, EmailScraper
 from parsers.TextSnippetScraper import TextSnippetScraper
+from typedefs import ContractorCallback
 from utils import fetch_site
 
 
@@ -19,7 +20,7 @@ class _FieldType(Enum):
     email = 'email'
     phone = 'phone'
 
-    def get_scraper(self) -> TextSnippetScraper:
+    def get_scraper(self) -> Union[AddressScraper, EmailScraper, PhoneScraper]:
         """ Return the corresponding scraper type for this field type """
         if self == self.address:
             return AddressScraper()
@@ -30,14 +31,14 @@ class _FieldType(Enum):
         else:
             raise ValueError(f"Unknown field type: {self}")
 
-    def get_callback_name(self) -> str:
+    def get_callback(self, contractor: Contractor) -> ContractorCallback:
         """ Return the corresponding callback for this field type """
         if self == self.address:
-            return 'set_address'
+            return contractor.set_address
         elif self == self.email:
-            return 'set_email'
+            return contractor.set_email
         elif self == self.phone:
-            return 'set_phone'
+            return contractor.set_phone
         else:
             raise ValueError(f"Unknown field type: {self}")
 
@@ -97,8 +98,8 @@ class SiteCrawler:
 
         # create a list of scraper coroutines and callbacks
         scrapers = [field.get_scraper() for field in self._fields]
-        callbacks = [field.get_callback_name() for field in self._fields]
-        coroutines = [scrapers[i](content, url, self._contractor, callbacks[i]) for i in range(len(scrapers))]
+        callbacks = [field.get_callback(self._contractor) for field in self._fields]
+        coroutines = [scraper(content, url, callback) for scraper, callback in zip(scrapers, callbacks)]
 
         # run all scrapers concurrently
         results = await asyncio.gather(*coroutines)
