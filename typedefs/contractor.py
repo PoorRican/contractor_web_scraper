@@ -1,6 +1,6 @@
 from langchain.prompts import PromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field, ValidationError, HttpUrl, validator
-from typing import NoReturn, Callable, Annotated
+from typing import NoReturn, Callable, Annotated, TypeVar
 
 from typedefs.validity import ValidityParser, Validity
 from llm import LLM
@@ -80,5 +80,8 @@ class Contractor(BaseContractor):
         return msg
 
 
-ContractorCallback = Callable[[str], NoReturn]
+T = TypeVar('T')
+
+
+ContractorCallback = Callable[[T], NoReturn]
 """ A callback function to set a `Contractor` attribute. """

@@ -34,7 +34,7 @@ def _address_scraper_chain() -> Runnable:
     return {'address': _address_extract_chain} | _formatter_prompt | LONG_MODEL_PARSER
 
 
-class AddressScraper(TextSnippetScraper):
+class AddressScraper(TextSnippetScraper[str]):
     _chain: ClassVar[Runnable] = _address_scraper_chain()
     _failure_text: ClassVar[str] = 'no address'
     _search_type: ClassVar[str] = 'address'

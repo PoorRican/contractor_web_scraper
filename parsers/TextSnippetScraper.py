@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC
 from asyncio import sleep
 from copy import copy
-from typing import Union, Generator, ClassVar
+from typing import Union, Generator, ClassVar, Generic, TypeVar
 
 from bs4 import Tag
 from langchain.schema.runnable import Runnable
@@ -17,8 +17,10 @@ from utils import strip_html_attrs
 _SLEEP_TIME = 1
 """ Time to sleep in seconds after a rate limit error. """
 
+T = TypeVar('T')
 
-class TextSnippetScraper(ABC):
+
+class TextSnippetScraper(Generic[T]):
     """ A template functor class for scraping text snippets from HTML content.
 
     This class is designed for extracting small text snippets from HTML content. It begins by looking at the header and
@@ -39,7 +41,7 @@ class TextSnippetScraper(ABC):
     _search_type: ClassVar[str]
 
     @classmethod
-    async def _process(cls, content: LLMInput) -> Union[str, None]:
+    async def _process(cls, content: LLMInput) -> Union[T, None]:
         """ Attempt to extract the text snippet from HTML content using `self._chain`.
 
         There is an internal mechanism that will retry the extraction if a rate limit error is encountered.

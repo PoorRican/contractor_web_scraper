@@ -38,7 +38,7 @@ def _email_scraper_chain() -> Runnable:
     return {'email': _email_extract_chain} | _formatter_prompt | LONG_MODEL_PARSER
 
 
-class EmailScraper(TextSnippetScraper):
+class EmailScraper(TextSnippetScraper[str]):
     _chain: ClassVar[Runnable] = _email_scraper_chain()
     _failure_text: ClassVar[str] = 'no email address'
     _search_type: ClassVar[str] = 'email address'
