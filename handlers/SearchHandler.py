@@ -91,8 +91,13 @@ class SearchHandler:
         desc = result.description
         # remove path and params from URL
         url = strip_url(result.url)
+        params = {
+            'title': await name,
+            'description': desc,
+            'url': url
+        }
 
-        return Contractor(await name, desc, url)
+        return Contractor(**params)
 
     async def __call__(self, terms: list[str]) -> NoReturn:
         """ Handles searches for each term in `terms`.

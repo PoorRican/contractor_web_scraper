@@ -71,23 +71,16 @@ class ResultsHandler:
     def _read(self):
         """ load parsed contractors from local CSV file """
         with open(FILENAME, 'r') as f:
-            reader = DictReader(f, fieldnames=Contractor.fields)
+            reader = DictReader(f, fieldnames=Contractor.fields())
             _ = reader.__next__()       # throw out the header row
             for row in reader:
-                title = row['title']
-                description = row['description']
-                url = row['url']
-                phone = row['phone']
-                email = row['email']
-                address = row['address']
-
-                contractor = Contractor.from_row(title, description, url, phone, email, address)
+                contractor = Contractor.construct(**row)
                 self.contractors[contractor.title] = contractor
 
     def _write(self):
         """ write parsed contractors to local CSV file """
         with open(FILENAME, 'w') as f:
-            writer = DictWriter(f, fieldnames=Contractor.fields)
+            writer = DictWriter(f, fieldnames=Contractor.fields())
             writer.writeheader()
             for contractor in self.contractors.values():
-                writer.writerow(contractor.to_row())
+                writer.writerow(contractor.model_dump())
