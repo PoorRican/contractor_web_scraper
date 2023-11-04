@@ -4,7 +4,7 @@ from os.path import exists
 from typing import NoReturn
 
 from log import logger
-from models import Contractor
+from typedefs import Contractor
 from .SiteCrawler import SiteCrawler
 
 

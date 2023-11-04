@@ -10,7 +10,7 @@ from openai import InvalidRequestError
 from openai.error import RateLimitError
 
 from log import logger
-from typedefs import LLMInput, ContractorCallback
+from typedefs import ContractorCallback, LLMInput
 from utils import strip_html_attrs
 
 

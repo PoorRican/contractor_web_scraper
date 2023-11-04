@@ -1,4 +1,4 @@
-from typing import NoReturn, ClassVar
+from typing import NoReturn, ClassVar, Callable
 
 
 class Contractor(object):
@@ -127,3 +127,7 @@ class Contractor(object):
             msg += f"Projects: {self.projects}\n"
 
         return msg
+
+
+ContractorCallback = Callable[[str], NoReturn]
+""" A callback function to set a `Contractor` attribute. """

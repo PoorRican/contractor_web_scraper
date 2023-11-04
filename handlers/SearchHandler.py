@@ -4,11 +4,11 @@ from typing import ClassVar, Any, NoReturn, Callable, Coroutine
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
 
-from models import Contractor
+from typedefs import Contractor
 from llm import MODEL_PARSER
 from log import logger
 from parsers.ResultChecker import ResultChecker
-from typedefs import SearchResults, SearchResult
+from typedefs import SearchResult, SearchResults
 from utils import strip_url
 from search import Search
 

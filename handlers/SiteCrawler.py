@@ -3,9 +3,8 @@ from enum import Enum
 from typing import NoReturn, Union
 
 from log import logger
-from models import Contractor
+from typedefs import Contractor
 from parsers import AddressScraper, PhoneScraper, EmailScraper
-from parsers.TextSnippetScraper import TextSnippetScraper
 from typedefs import ContractorCallback
 from utils import fetch_site
 
