@@ -1,4 +1,33 @@
-from typing import NoReturn, ClassVar, Callable
+from langchain.prompts import PromptTemplate
+from langchain.pydantic_v1 import BaseModel, Field, field_validator, ValidationError, HttpUrl
+from typing import NoReturn, ClassVar, Callable, Annotated
+
+from typedefs.validity import ValidityParser, Validity
+from llm import LLM
+
+
+class BaseContractor(BaseModel):
+    title: Annotated[str, Field(description='Title of the contractor')]
+    description: Annotated[str, Field(description='Description of the contractor')]
+    URL: Annotated[HttpUrl, Field(description='URL of the contractor homepage')]
+    # TODO: add industry field
+
+    @classmethod
+    @field_validator('description')
+    def is_contractor(cls, v) -> str:
+        prompt = PromptTemplate.from_template(
+            """Does this description describe an actual construction contractor website? {description}
+            
+            {format_instructions}
+            """,
+            partial_variables={'format_instructions': ValidityParser.get_format_instructions()},
+            output_parser=ValidityParser
+        )
+        chain = prompt | LLM | ValidityParser
+        response: Validity = chain.invoke(v)
+        if response.valid:
+            raise ValidationError(f"Invalid URL: {v}")
+        return v
 
 
 class Contractor(object):
