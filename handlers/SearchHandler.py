@@ -43,8 +43,10 @@ class SearchHandler:
     """ Perform search and filter contractor websites via LLM.
 
     This is a functor which accepts a list of search terms, then parses each search result. A `Contractor` object is
-    created for each search result that is determined to be a contractor website. For each `Contract` object, the
+    created for each search result that is determined to be a contractor website. For each `Contractor` object, the
     `ResultsHandler` is notified by passing a list of `Contractor` objects to the `on_parse` callback.
+
+    The `ResultChecker` functor is used to determine if a search result is a contractor website.
     """
     _blacklist: ClassVar[list[str]] = load_blacklist()
     """ A list of strings that are used to filter out search results.
@@ -118,7 +120,7 @@ class SearchHandler:
 
         First, `SearchResult` URLs which contain a blacklisted snippet (ie: "yelp.com", ".gov", etc.) are filtered out.
         Then an LLM chain filters out any search results that are not contractor sites. For each contractor site, the
-        results are given to `ResultsHandler.handle_contractors()` via the `_on_parse` callback.
+        results are given to `ResultsHandler.handle_results()` via the `_on_parse` callback.
 
         Parameters:
             results: generator of `SearchResult` objects to parse. This should be the output of `googlesearch.search()`.

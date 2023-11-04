@@ -14,9 +14,10 @@ FILENAME = 'contractors.csv'
 class ResultsHandler:
     """ Top-level observer which receives parsed `Contractor` objects.
 
-    This class is responsible for saving the parsed data to the database,
-    then subsequently scraping contractor sites asynchronously. Eventually, processing should occur in a separate
-    thread.
+    This class is for handling parsed `Contractor` objects. It is responsible for saving the contractors to local
+    storage, reading/writing the CSV file, and scraping the contractor sites.
+
+    Parsing of the contractor sites is done asynchronously. Ideally, processing should be done in parallel.
 
     Attributes:
         contractors: dict of parsed `Contractor` objects
@@ -28,9 +29,10 @@ class ResultsHandler:
 
     @staticmethod
     async def _scrape(contractor: Contractor) -> NoReturn:
-        """ Asynchronously process a single contractor.
+        """ Asynchronously process a single contractor by using the `SiteCrawler` functor.
 
-        This will fetch the contractor site, then scrape the address from the site.
+        Parameters:
+            contractor: `Contractor` object to process
         """
 
         crawler = SiteCrawler(contractor)
