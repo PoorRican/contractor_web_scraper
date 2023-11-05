@@ -1,5 +1,5 @@
 from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field, ValidationError, HttpUrl, validator
+from langchain.pydantic_v1 import BaseModel, Field, ValidationError, HttpUrl, validator, EmailStr
 from typing import NoReturn, Callable, Annotated, TypeVar
 
 from typedefs.address import Address
@@ -34,7 +34,7 @@ class BaseContractor(BaseModel):
 class Contractor(BaseContractor):
     """ Abstraction for parsed contractor data """
     phone: str | None = Field(description='Phone number of the contractor')
-    email: str | None = Field(description='Email address of the contractor')
+    email: EmailStr | None = Field(description='Email address of the contractor')
     address: Address | None = Field(description='Physical mailing address of the contractor')
 
     @staticmethod
