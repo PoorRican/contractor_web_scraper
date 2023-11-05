@@ -83,4 +83,4 @@ class ResultsHandler:
             writer = DictWriter(f, fieldnames=Contractor.fields())
             writer.writeheader()
             for contractor in self.contractors.values():
-                writer.writerow(contractor.model_dump())
+                writer.writerow(contractor.dict())
