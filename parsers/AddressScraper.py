@@ -1,10 +1,15 @@
 from typing import ClassVar
 
+from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
 
-from llm import LONG_MODEL_PARSER
+from llm import LONG_MODEL_PARSER, LLM
 from parsers.TextSnippetScraper import TextSnippetScraper
+from typedefs.address import Address
+
+
+_address_parser = PydanticOutputParser(pydantic_object=Address)
 
 
 def _address_scraper_chain() -> Runnable:
@@ -26,15 +31,17 @@ def _address_scraper_chain() -> Runnable:
         Here is the address: {address}
 
         Is this a specific mailing address? If not, return 'no address' and nothing else.
-        Format the mailing address so that it is on one line, with commas separating each part of the address.
-        """
+        
+        {format_instructions}
+        """,
+        partial_variables={'format_instructions': _address_parser.get_format_instructions()},
     )
 
     _address_extract_chain: Runnable = _address_scaper_prompt | LONG_MODEL_PARSER
-    return {'address': _address_extract_chain} | _formatter_prompt | LONG_MODEL_PARSER
+    return {'address': _address_extract_chain} | _formatter_prompt | LLM | _address_parser
 
 
-class AddressScraper(TextSnippetScraper[str]):
+class AddressScraper(TextSnippetScraper[Address]):
     _chain: ClassVar[Runnable] = _address_scraper_chain()
     _failure_text: ClassVar[str] = 'no address'
     _search_type: ClassVar[str] = 'address'

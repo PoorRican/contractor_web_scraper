@@ -2,6 +2,7 @@ from langchain.prompts import PromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field, ValidationError, HttpUrl, validator
 from typing import NoReturn, Callable, Annotated, TypeVar
 
+from typedefs.address import Address
 from typedefs.validity import ValidityParser, Validity
 from llm import LLM
 
@@ -34,14 +35,14 @@ class Contractor(BaseContractor):
     """ Abstraction for parsed contractor data """
     phone: str | None = Field(description='Phone number of the contractor')
     email: str | None = Field(description='Email address of the contractor')
-    address: str | None = Field(description='Physical mailing address of the contractor')
+    address: Address | None = Field(description='Physical mailing address of the contractor')
 
     @staticmethod
     def fields() -> list[str]:
         return list(Contractor.__fields__.keys())
 
-    def set_address(self, address: str) -> NoReturn:
-        """ Update address string
+    def set_address(self, address: Address) -> NoReturn:
+        """ Update address object
 
         This is to be used as a callback from future scraper classes.
         """

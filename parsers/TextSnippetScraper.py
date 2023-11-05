@@ -1,16 +1,17 @@
 import asyncio
-from abc import ABC
 from asyncio import sleep
 from copy import copy
 from typing import Union, Generator, ClassVar, Generic, TypeVar
 
 from bs4 import Tag
+from langchain.schema.output_parser import OutputParserException
 from langchain.schema.runnable import Runnable
 from openai import InvalidRequestError
 from openai.error import RateLimitError
 
 from log import logger
 from typedefs import ContractorCallback, LLMInput
+from typedefs.address import Address
 from utils import strip_html_attrs
 
 
@@ -57,8 +58,13 @@ class TextSnippetScraper(Generic[T]):
         while retries < max_retries:
             try:
                 result: str = await cls._chain.ainvoke({'content': str(content)})
-                if cls._failure_text not in result.lower():
+                is_str = type(result) is str
+                if not is_str or (is_str and cls._failure_text not in result.lower()):
                     return result
+                break
+
+            except OutputParserException:
+                break
 
             except RateLimitError:
                 retries += 1
