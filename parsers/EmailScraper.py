@@ -1,6 +1,7 @@
 from typing import ClassVar
 
 from bs4 import Tag
+from email_validator import validate_email, EmailNotValidError
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
 
@@ -48,7 +49,12 @@ class EmailScraper(TextSnippetScraper[str]):
         for tag in content.find_all('a'):
             if 'href' in tag.attrs and 'mailto' in tag.attrs['href']:
                 email = tag.attrs['href'].replace('mailto:', '')
-                callback(email)
-                return True
+                try:
+                    normalized = validate_email(email).normalize
+                    callback(normalized)
+                    return True
+                except EmailNotValidError as e:
+                    logger.warn(f"Invalid email address found: {e}")
+                    continue
         logger.debug(f"Traditional scraping could not find email address in {url}. Deferring to LLM...")
         return await super().__call__(content, url, callback)
