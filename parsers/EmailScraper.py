@@ -50,5 +50,5 @@ class EmailScraper(TextSnippetScraper[str]):
                 email = tag.attrs['href'].replace('mailto:', '')
                 callback(email)
                 return True
-        logger.debug(f"Traditional scraping could not find phone number in {url}. Deferring to LLM...")
+        logger.debug(f"Traditional scraping could not find email address in {url}. Deferring to LLM...")
         return await super().__call__(content, url, callback)
