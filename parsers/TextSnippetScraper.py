@@ -159,6 +159,6 @@ class TextSnippetScraper(Generic[T]):
                 callback(snippet)
                 return True
 
-        logger.warning(f"Could not extract {self._search_type} snippet from '{url}'")
+        logger.debug(f"Could not extract {self._search_type} snippet from '{url}'")
 
         return False
