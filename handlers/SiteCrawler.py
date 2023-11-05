@@ -6,7 +6,6 @@ from log import logger
 from typedefs import Contractor
 from parsers import AddressScraper, PhoneScraper, EmailScraper
 from parsers.SiteMapExtrator import SiteMapExtractor
-from parsers.TextSnippetScraper import TextSnippetScraper
 from typedefs import ContractorCallback
 from utils import fetch_site
 
@@ -85,14 +84,24 @@ class SiteCrawler:
 
         self._pages.add(contractor.url)
 
+    async def _add_sitemap(self):
+        """ Add the sitemap to the list of pages to be scraped """
+        try:
+            sitemap = await self._map_extractor(self._contractor.url)
+
+            for i in ('about', 'contact'):
+                attr = getattr(sitemap, i)
+                if attr:
+                    self._pages.add(str(attr))
+        except ValueError as e:
+            logger.error(f"Error while extracting site map from {self._contractor.url}: {e}")
+
     async def __call__(self) -> NoReturn:
         """ Scrape all pages for data.
 
         As each page is scraped, it is removed from the list of pages to be scraped.
         """
-        # extract all pages from site map
-        pages = await self._map_extractor(self._contractor.url)
-        self._pages.update(pages)
+        await self._add_sitemap()
 
         # scrape pages until all fields are found or all pages are scraped
         logger.info(f"Scraping {self._contractor.url}")
@@ -108,7 +117,7 @@ class SiteCrawler:
         """
         try:
             content = await fetch_site(url)
-        except Exception as e:
+        except ValueError as e:
             logger.error(f"Error while fetching site: {url}. Error: {e}")
             return
 
