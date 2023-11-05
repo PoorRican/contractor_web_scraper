@@ -38,7 +38,7 @@ def _email_scraper_chain() -> Runnable:
     return {'email': _email_extract_chain} | _formatter_prompt | LONG_MODEL_PARSER
 
 
-class EmailScraper(TextSnippetScraper):
+class EmailScraper(TextSnippetScraper[str]):
     _chain: ClassVar[Runnable] = _email_scraper_chain()
     _failure_text: ClassVar[str] = 'no email address'
     _search_type: ClassVar[str] = 'email address'
@@ -50,5 +50,5 @@ class EmailScraper(TextSnippetScraper):
                 email = tag.attrs['href'].replace('mailto:', '')
                 callback(email)
                 return True
-        logger.debug(f"Traditional scraping could not find phone number in {url}. Deferring to LLM...")
+        logger.debug(f"Traditional scraping could not find email address in {url}. Deferring to LLM...")
         return await super().__call__(content, url, callback)

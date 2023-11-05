@@ -4,15 +4,25 @@ from typing import ClassVar, Any, NoReturn, Callable, Coroutine
 from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import Runnable
 
-from models import Contractor
+from typedefs import Contractor
 from llm import MODEL_PARSER
 from log import logger
 from parsers.ResultChecker import ResultChecker
-from typedefs import SearchResults, SearchResult
+from typedefs import SearchResult, SearchResults
 from utils import strip_url
 from search import Search
 
 NUM_RESULTS: int = 1000
+
+
+def load_blacklist() -> list[str]:
+    """ Load the blacklist from a file.
+
+    Returns:
+        list of strings containing the blacklist
+    """
+    with open('blacklist.txt', 'r') as f:
+        return [line.strip() for line in f.readlines()]
 
 
 _name_extractor_prompt = PromptTemplate.from_template(
@@ -33,8 +43,16 @@ class SearchHandler:
     """ Perform search and filter contractor websites via LLM.
 
     This is a functor which accepts a list of search terms, then parses each search result. A `Contractor` object is
-    created for each search result that is determined to be a contractor website. For each `Contract` object, the
+    created for each search result that is determined to be a contractor website. For each `Contractor` object, the
     `ResultsHandler` is notified by passing a list of `Contractor` objects to the `on_parse` callback.
+
+    The `ResultChecker` functor is used to determine if a search result is a contractor website.
+    """
+    _blacklist: ClassVar[list[str]] = load_blacklist()
+    """ A list of strings that are used to filter out search results.
+    
+    Most of the items in this list are URLs that are not contractor websites such as BBB, Yelp, etc.
+    However, there are snippets (such as ".gov") that are also in this list.
     """
 
     _name_extract_chain: ClassVar[Runnable] = _name_extractor_prompt | MODEL_PARSER
@@ -73,20 +91,24 @@ class SearchHandler:
         desc = result.description
         # remove path and params from URL
         url = strip_url(result.url)
+        params = {
+            'title': await name,
+            'description': desc,
+            'url': url
+        }
 
-        return Contractor(await name, desc, url)
+        return Contractor(**params)
 
     async def __call__(self, terms: list[str]) -> NoReturn:
         """ Handles searches for each term in `terms`.
 
         Each batch of `Contractor` objects are handled by the `_parse_results()`.
 
-        Chunking of search results is necessary to avoid hitting OpenAI API and Bing Search API rate limits.
+        Chunking of search results is necessary to avoid hitting Bing Search API rate limits.
 
         Parameters:
             terms: list of search terms
         """
-        # TODO: this could be parallelized
         _chunk_size = 50
         for term in terms:
             logger.info(f"Searching for '{term}'")
@@ -101,14 +123,17 @@ class SearchHandler:
     async def _parse_results(self, results: SearchResults) -> NoReturn:
         """ Parse unfiltered results into `Contractor` objects
 
-        This will filter out any search results that are not contractor sites. Then for each contractor site, the
-        `_on_parse` callback is called with a list of `Contractor` objects.
-
-        For each batch of `Contractor` objects that are parsed, the `_on_parse` callback is called.
+        First, `SearchResult` URLs which contain a blacklisted snippet (ie: "yelp.com", ".gov", etc.) are filtered out.
+        Then an LLM chain filters out any search results that are not contractor sites. For each contractor site, the
+        results are given to `ResultsHandler.handle_results()` via the `_on_parse` callback.
 
         Parameters:
             results: generator of `SearchResult` objects to parse. This should be the output of `googlesearch.search()`.
         """
+
+        # remove any results that contain a blacklisted string
+        results = [result for result in results if not any([blacklist in result.url for blacklist in self._blacklist])]
+
         # parse all results into an array of booleans
         # any result that is a contractor site will be True
         contractor_sites = await asyncio.gather(*[self._is_contractor_site(result) for result in results])

@@ -3,9 +3,8 @@ from enum import Enum
 from typing import NoReturn, Union
 
 from log import logger
-from models import Contractor
+from typedefs import Contractor
 from parsers import AddressScraper, PhoneScraper, EmailScraper
-from parsers.TextSnippetScraper import TextSnippetScraper
 from typedefs import ContractorCallback
 from utils import fetch_site
 
@@ -14,7 +13,7 @@ class _FieldType(Enum):
     """ An enum representing a field type to be scraped.
 
     This enum is used to determine which scraper and callback to use for a given field. Additionally, it is used to
-    determine which fields are have not been scraped for a given `Contractor` object.
+    determine which fields have not been scraped for a given `Contractor` object.
     """
     address = 'address'
     email = 'email'
@@ -32,7 +31,10 @@ class _FieldType(Enum):
             raise ValueError(f"Unknown field type: {self}")
 
     def get_callback(self, contractor: Contractor) -> ContractorCallback:
-        """ Return the corresponding callback for this field type """
+        """ Return the corresponding callback for this field type
+
+        These callbacks are used by `TextSnippetScraper` to update the `Contractor` object with the scraped data.
+        """
         if self == self.address:
             return contractor.set_address
         elif self == self.email:
@@ -57,17 +59,24 @@ class SiteCrawler:
     """
     _contractor: Contractor
 
-    _pages: set[str] = set()
-    """ A set of URLs to be scraped """
+    _pages: set[str]
+    """ A set of URLs to be scraped.
+    
+    As pages are scraped, they are removed from this set.
+    """
 
     _fields: set[_FieldType]
-    """ A set of fields that are lacking by the `Contractor` object """
+    """ A set of fields that are lacking by the `Contractor` object.
+    
+    As data is found, they are removed from this set.
+    """
 
     def __init__(self, contractor: Contractor):
         """ Initialize the `SiteCrawler` object.
 
         A list of pages to be scraped is initialized with the contractor's URL.
         """
+        self._pages = set()
         self._fields = default_fields()
         self._contractor = contractor
 
@@ -87,8 +96,8 @@ class SiteCrawler:
     async def _scrape_page(self, url: str) -> NoReturn:
         """ Scrape a single page for data.
 
-        This will fetch the page, then scrape the page for data. If any data is found, the corresponding callback will
-        be called and the field is removed from the list of fields to be scraped.
+        This will fetch the page, then scrape the page for data. If any data is found, the corresponding callback field
+        is removed from the list of fields to be scraped.
         """
         try:
             content = await fetch_site(url)

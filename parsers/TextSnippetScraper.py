@@ -1,19 +1,27 @@
 import asyncio
-from abc import ABC
+from asyncio import sleep
 from copy import copy
-from typing import Union, Generator, ClassVar
+from typing import Union, Generator, ClassVar, Generic, TypeVar
 
 from bs4 import Tag
+from langchain.schema.output_parser import OutputParserException
 from langchain.schema.runnable import Runnable
 from openai import InvalidRequestError
+from openai.error import RateLimitError
 
 from log import logger
-from models import Contractor
-from typedefs import LLMInput, ContractorCallback
+from typedefs import ContractorCallback, LLMInput
+from typedefs.address import Address
 from utils import strip_html_attrs
 
 
-class TextSnippetScraper(ABC):
+_SLEEP_TIME = 1
+""" Time to sleep in seconds after a rate limit error. """
+
+T = TypeVar('T')
+
+
+class TextSnippetScraper(Generic[T]):
     """ A template functor class for scraping text snippets from HTML content.
 
     This class is designed for extracting small text snippets from HTML content. It begins by looking at the header and
@@ -27,28 +35,52 @@ class TextSnippetScraper(ABC):
     """
 
     _chunk_size: ClassVar[int] = 100
+    """ Number of `Tag` objects in a single batch to process at once. """
 
     _chain: ClassVar[Runnable]
     _failure_text: ClassVar[str]
     _search_type: ClassVar[str]
 
     @classmethod
-    async def _process(cls, content: LLMInput) -> Union[str, None]:
+    async def _process(cls, content: LLMInput) -> Union[T, None]:
         """ Attempt to extract the text snippet from HTML content using `self._chain`.
+
+        There is an internal mechanism that will retry the extraction if a rate limit error is encountered.
 
         Parameters:
             content: HTML content to extract snippet from
 
         Returns:
-            The extracted snippet, or None if no snippet was found.
+            The extracted snippet. `None` if no snippet was found or an error was encountered.
         """
-        try:
-            result: str = await cls._chain.ainvoke({'content': str(content)})
-            if cls._failure_text not in result.lower():
-                return result
-        except InvalidRequestError:
-            print(f"InvalidRequestError while scraping {cls._search_type}. String might be too many tokens...")
-            # TODO: break down content into smaller pieces
+        max_retries = 15
+        retries = 0
+        while retries < max_retries:
+            try:
+                result: str = await cls._chain.ainvoke({'content': str(content)})
+                is_str = type(result) is str
+                if not is_str or (is_str and cls._failure_text not in result.lower()):
+                    return result
+                break
+
+            except OutputParserException:
+                break
+
+            except RateLimitError:
+                retries += 1
+
+                if retries == max_retries:
+                    logger.error("Rate limit hit too many times. Aborting...")
+                else:
+                    logger.warning(f"Rate limit hit. Retrying {cls._search_type} extraction after {_SLEEP_TIME}s...")
+                    await sleep(_SLEEP_TIME)
+
+            except InvalidRequestError:
+                # TODO: break down content into smaller chunks
+                logger.error(f"InvalidRequestError while scraping {cls._search_type}. "
+                             "String might be too many tokens...")
+                break
+
         return None
 
     @classmethod
