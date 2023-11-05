@@ -1,10 +1,11 @@
 import asyncio
 from enum import Enum
-from typing import NoReturn, Union
+from typing import NoReturn, Union, ClassVar
 
 from log import logger
 from typedefs import Contractor
 from parsers import AddressScraper, PhoneScraper, EmailScraper
+from parsers.SiteMapExtrator import SiteMapExtractor
 from typedefs import ContractorCallback
 from utils import fetch_site
 
@@ -57,6 +58,7 @@ class SiteCrawler:
     it is removed from the list of fields to be scraped. Whenever a page is scraped, it is removed from the list of
     pages to be scraped.
     """
+    _map_extractor: ClassVar[SiteMapExtractor] = SiteMapExtractor()
     _contractor: Contractor
 
     _pages: set[str]
@@ -80,14 +82,28 @@ class SiteCrawler:
         self._fields = default_fields()
         self._contractor = contractor
 
-        # TODO: populate pages from contractor site (home -> about -> contact -> services -> projects -> ...)
         self._pages.add(contractor.url)
+
+    async def _add_sitemap(self):
+        """ Add the sitemap to the list of pages to be scraped """
+        try:
+            sitemap = await self._map_extractor(self._contractor.url)
+
+            for i in ('about', 'contact'):
+                attr = getattr(sitemap, i)
+                if attr:
+                    self._pages.add(str(attr))
+        except ValueError as e:
+            logger.error(f"Error while extracting site map from {self._contractor.url}: {e}")
 
     async def __call__(self) -> NoReturn:
         """ Scrape all pages for data.
 
         As each page is scraped, it is removed from the list of pages to be scraped.
         """
+        await self._add_sitemap()
+
+        # scrape pages until all fields are found or all pages are scraped
         logger.info(f"Scraping {self._contractor.url}")
         while self._fields and self._pages:
             page = self._pages.pop()
@@ -101,7 +117,7 @@ class SiteCrawler:
         """
         try:
             content = await fetch_site(url)
-        except Exception as e:
+        except ValueError as e:
             logger.error(f"Error while fetching site: {url}. Error: {e}")
             return
 
