@@ -1,11 +1,13 @@
 from typing import NoReturn
 from urllib.parse import urlparse
 
+from aiohttp import ClientConnectorSSLError, ClientConnectorError
 from aiohttp_retry import RetryClient
 
 from requests.utils import default_headers
 from bs4 import BeautifulSoup, Tag
 
+from log import logger
 from typedefs import Contractor
 
 
@@ -30,8 +32,13 @@ async def fetch_site(url: str) -> Tag:
                         'Dnt': '1',
                         'Sec-Ch-Ua': '"Not=A?Brand";v = "99", "Chromium";v = "118"'
                         })
-        async with client.get(url, headers=headers) as response:
-            content = await response.text()
+        try:
+            async with client.get(url, headers=headers) as response:
+                content = await response.text()
+        except (ClientConnectorSSLError, ClientConnectorError):
+            msg = f"SSL error while fetching {url}"
+            logger.error(msg)
+            raise ValueError(msg)
 
     soup = BeautifulSoup(content, 'html.parser')
     body = soup.find('body')
