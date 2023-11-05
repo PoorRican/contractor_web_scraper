@@ -11,7 +11,6 @@ from openai.error import RateLimitError
 
 from log import logger
 from typedefs import ContractorCallback, LLMInput
-from typedefs.address import Address
 from utils import strip_html_attrs
 
 

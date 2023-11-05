@@ -15,12 +15,12 @@ _address_parser = PydanticOutputParser(pydantic_object=Address)
 def _address_scraper_chain() -> Runnable:
     """ Create a chain of LLM models to extract addresses from text snippets """
     _address_scaper_prompt = PromptTemplate.from_template(
-        """You will be given the HTML content of a construction company website.
-
+        """You will be given the HTML content from a company website.
+    
         Here is the content: ```{content}```
-
-        What is the mailing address of the company? Return only the address and nothing else.
-        If there are two addresses, return the first one, but nothing else.
+    
+        What is the mailing address of the company?
+        Return the properly formatted address separated by commas and nothing else.
         If there is no mailing address within the content, return 'no address' and nothing else.
         """
     )
@@ -30,8 +30,7 @@ def _address_scraper_chain() -> Runnable:
 
         Here is the address: {address}
 
-        Is this a specific mailing address? If not, return 'no address' and nothing else.
-        
+        Return the address formatted as follows:
         {format_instructions}
         """,
         partial_variables={'format_instructions': _address_parser.get_format_instructions()},
