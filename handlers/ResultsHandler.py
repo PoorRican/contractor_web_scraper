@@ -4,7 +4,7 @@ from os.path import exists
 from typing import NoReturn
 
 from log import logger
-from models import Contractor
+from typedefs import Contractor
 from .SiteCrawler import SiteCrawler
 
 
@@ -14,9 +14,10 @@ FILENAME = 'contractors.csv'
 class ResultsHandler:
     """ Top-level observer which receives parsed `Contractor` objects.
 
-    This class is responsible for saving the parsed data to the database,
-    then subsequently scraping contractor sites asynchronously. Eventually, processing should occur in a separate
-    thread.
+    This class is for handling parsed `Contractor` objects. It is responsible for saving the contractors to local
+    storage, reading/writing the CSV file, and scraping the contractor sites.
+
+    Parsing of the contractor sites is done asynchronously. Ideally, processing should be done in parallel.
 
     Attributes:
         contractors: dict of parsed `Contractor` objects
@@ -28,9 +29,10 @@ class ResultsHandler:
 
     @staticmethod
     async def _scrape(contractor: Contractor) -> NoReturn:
-        """ Asynchronously process a single contractor.
+        """ Asynchronously process a single contractor by using the `SiteCrawler` functor.
 
-        This will fetch the contractor site, then scrape the address from the site.
+        Parameters:
+            contractor: `Contractor` object to process
         """
 
         crawler = SiteCrawler(contractor)
@@ -69,23 +71,16 @@ class ResultsHandler:
     def _read(self):
         """ load parsed contractors from local CSV file """
         with open(FILENAME, 'r') as f:
-            reader = DictReader(f, fieldnames=Contractor.fields)
+            reader = DictReader(f, fieldnames=Contractor.fields())
             _ = reader.__next__()       # throw out the header row
             for row in reader:
-                title = row['title']
-                description = row['description']
-                url = row['url']
-                phone = row['phone']
-                email = row['email']
-                address = row['address']
-
-                contractor = Contractor.from_row(title, description, url, phone, email, address)
+                contractor = Contractor.construct(**row)
                 self.contractors[contractor.title] = contractor
 
     def _write(self):
         """ write parsed contractors to local CSV file """
         with open(FILENAME, 'w') as f:
-            writer = DictWriter(f, fieldnames=Contractor.fields)
+            writer = DictWriter(f, fieldnames=Contractor.fields())
             writer.writeheader()
             for contractor in self.contractors.values():
-                writer.writerow(contractor.to_row())
+                writer.writerow(contractor.dict())

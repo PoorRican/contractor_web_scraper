@@ -6,7 +6,7 @@ from typing import Union, ClassVar
 import requests
 
 from log import logger
-from typedefs import SearchResults, SearchResult
+from typedefs import (SearchResult, SearchResults)
 
 from dotenv import load_dotenv
 

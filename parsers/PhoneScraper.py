@@ -37,7 +37,7 @@ def _phone_scraper_chain() -> Runnable:
     return {'phone_number': _phone_extract_chain} | _formatter_prompt | LONG_MODEL_PARSER
 
 
-class PhoneScraper(TextSnippetScraper):
+class PhoneScraper(TextSnippetScraper[str]):
     _chain: ClassVar[Runnable] = _phone_scraper_chain()
     _failure_text: ClassVar[str] = 'no phone number'
     _search_type: ClassVar[str] = 'phone number'

@@ -6,7 +6,7 @@ from aiohttp_retry import RetryClient
 from requests.utils import default_headers
 from bs4 import BeautifulSoup, Tag
 
-from models import Contractor
+from typedefs import Contractor
 
 
 async def fetch_site(url: str) -> Tag:
